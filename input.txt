@@ -1,0 +1,89 @@
+> <comments>
+This comment is not interpreted, so store any extra info here.
+Keywords are case insensitive. Look at the help below.
+IMPORTANT: avoid the use of '2d' and '3d' in the names of species, transition states and reactions
+(these strings are employed when generating the 2d and 3d files of the molecules)
+If you want to use 3D coordinates, store them in a xyz/ directory in the same directory as the python script
+
+This example is based on figure 1 in the article: 
+J Zádor et al.  Phys Chem Chem Phys 11 (46), 11040-11053. 2009 Oct 13.
+
+ 
+ 
+> <id> propene_hydroxyl
+
+> <units> kcal/mol
+
+> <use_xyz> no
+
+> <rescale> 
+
+> <wells> 
+vdW -2.2 C[CH]CO
+b_rad -27.2 C[CH]CO
+a_rad -30.9 CC[CH]O
+o_rad -24.9 CCC[O]
+c_rad -20.9 [CH2]CCO
+
+> <bimolec> 
+propene_oh 0. C=CC O
+allylalcohol_h 7.9 C=CCO [H]
+propenol_h 2.1 OC=CC [H]
+ethene_CH2OH -5.3 C=C [CH2]O
+propanal_h -6.8 CCC=O [H]
+vinylalcohol_methyl -9.0 C=CO [CH3]
+ethyl_formaldehyde -11.6 [CH2]C C=O
+oxetane_h 19.6 C1CCO1 [H]
+epoxypropane_h 16.1 CC1OC1 [H]
+cyclopropanol_h 14.4 C1CC1O [H]
+
+> <ts> 
+entrance -1.8 vdW b_rad
+cycl1 31.8 b_rad epoxypropane_h
+isom1 12.9 b_rad a_rad
+beta1 6.2 b_rad propenol_h
+isom2 13.1 b_rad o_rad
+isom3 5.6 b_rad c_rad
+beta2 9.6 b_rad allylalcohol_h
+isom4 12.7 a_rad o_rad
+cycl2 30.4 a_rad cyclopropanol_h
+isom5 6.6 a_rad c_rad
+beta3 3.7 a_rad propenol_h
+beta4 3.6 a_rad propanal_h
+beta5 0.1 a_rad vinylalcohol_methyl
+isom6 -0.1 o_rad c_rad
+cycl3 36.7 o_rad oxetane_h
+cycl4 35.0 o_rad cyclopropanol_h
+beta6 10.9 o_rad allylalcohol_h
+alpha1 2.7  o_rad ethene_CH2OH
+cycl5 41.9 c_rad oxetane_h
+cycl6 31.6 c_rad epoxypropane_h
+beta7 -0.6 c_rad propanal_h
+beta8 -6.6 c_rad ethyl_formaldehyde
+
+> <barrierless> 
+b1 propene_oh vdW 
+
+> <help>
+File follows the rules of SD file format for keywords. Keywords are case
+insensitive when parsed.
+Keywords:
+units: units of the energies supplied above
+
+usexyz: use the xyz coordinates of all the species and render a 2D/3D depiction
+
+rescale: energies are rescaled relative to the energy of the species given here 
+
+wells: all the wells of the PES, separated by lines
+each line contains the name, the energy, and optionally the smiles
+
+bimolec: all the bimolecular products of the PES, separated by lines
+each line contains the name, the energy, and optionally the smiles of both bimolecular products
+
+ts: all the transition states of the PES, separated by lines
+each line contains the name, the energy, and the names of the reactant and product
+
+barrierless: all the barrierless reactions of the PES, separated by lines
+each line contains the name and the names of the reactant and product
+
+
