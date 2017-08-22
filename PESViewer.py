@@ -10,7 +10,9 @@ import matplotlib.pyplot
 from matplotlib import pylab as plt
 from matplotlib.text import Text
 import matplotlib.image as mpimg
+from PIL import Image
 import numpy as np
+from numpy import *
 import numpy.linalg as la
 import math
 try:
@@ -59,14 +61,6 @@ linesd = {}
 imgsd = {}
 #extents of the images
 extsd = {}
-
-
-class mouseeventhandler(object):
-     """
-    Class to (1) drag an image (2) select, hihglight and render 3d (TODO) of stationary points
-    and (3) drag the stationary points
-    """
-#end class
 
 class dragimage(object):
     """
@@ -129,8 +123,7 @@ class selecthandler(object):
     """
     def __init__(self, figure=None):
         if figure is None : figure = plt.gcf()
-        self.struct = None
-        self.proc = []
+        self.struct = None # stationary point that is selected
         figure.canvas.mpl_connect("button_press_event", self.on_pick_event)
         figure.canvas.mpl_connect("button_release_event", self.on_release_event)
         figure.canvas.mpl_connect("motion_notify_event", self.motion_notify_event)
@@ -138,6 +131,8 @@ class selecthandler(object):
     
     def on_pick_event(self,event):
         self.struct = None
+        #TODO: find more efficient way to iterate all stationary points in one loop?
+        # create a new list?
         for w in wells:
             if self.is_close(w,event):
                 self.struct = w
@@ -158,28 +153,24 @@ class selecthandler(object):
         #end for
         if self.struct == None:
             highlight_structure()
-            for p in self.proc:
-                p.terminate()
-            #end for
-            del self.proc[:]
         #end if
     #end def
 
     def motion_notify_event(self, event):
-        if self.struct is not None :
-            old_pos = (self.struct.x,self.struct.y)
-            new_pos = (event.xdata,old_pos[1])
-            self.struct.x = event.xdata
-            updateplot(self.struct,(event.xdata-old_pos[0]))
+        if self.struct is not None:
+            # a stationary point got selected
+            old_pos = (self.struct.x,self.struct.y) # current position of the stationary point
+            new_pos = (event.xdata,old_pos[1]) # new position of the stationary point
+            self.struct.x = event.xdata # set the new position
+            updateplot(self.struct,(event.xdata-old_pos[0])) # move all the elements(image, text and lines)
             self.current_pos = old_pos
     #end def
     
     def on_release_event(self, event):
-        " Update text position and redraw"
         if self.struct is not None :
             self.struct = None
-            save_x_values()
-            save_im_extent()
+            save_x_values() # save the x-values of the startionary points to a file
+            save_im_extent() # save the image extents (x and y coordinates) to a file
         #end if
         return True
     #end def
@@ -303,17 +294,21 @@ class barrierless:
     #end def
 #end class
 
-"""
-Method fits a third order polynomial through two points as such
-that the derivative in both points is zero
-This method should only be used if x1 is not equal to x2
-"""
 def get_polynomial(x1,y1,x2,y2):
-    y = np.matrix([[y1],[y2],[0],[0]])
-    x = np.matrix([[x1**3 ,x1**2, x1, 1],[x2**3,x2**2,x2,1],[3*x1**2,2*x1,1,0],[3*x2**2,2*x2,1,0]])
-    xinv = la.inv(x)
-    a = np.dot(xinv,y)
-    return np.transpose(a).tolist()[0]
+    """
+    Method fits a third order polynomial through two points as such
+    that the derivative in both points is zero
+    This method should only be used if x1 is not equal to x2
+    """
+    if x1 == x2:
+        print 'Error, cannot fit a polynomial if x1 equals x2'
+        sys.exit()
+    else:
+        y = np.matrix([[y1],[y2],[0],[0]])
+        x = np.matrix([[x1**3 ,x1**2, x1, 1],[x2**3,x2**2,x2,1],[3*x1**2,2*x1,1,0],[3*x2**2,2*x2,1,0]])
+        xinv = la.inv(x)
+        a = np.dot(xinv,y)
+        return np.transpose(a).tolist()[0]
 #end def
 
 def read_input():
@@ -396,7 +391,7 @@ def get_sd_prop(all_lines):
 def position():
     """
     This method find initial position for all the wells, products and transition states
-    Initially, the well are put in the middle and the products are divided on both sides
+    Initially, the wells are put in the middle and the products are divided on both sides
     The transition states are positioned inbetween the reactants and products of the reaction
     """
     #do the rescaling, i.e. find the y values
@@ -413,6 +408,7 @@ def position():
         t.y = t.energy - y0
     #end for
     # find the x values
+ 
     file_name = '%s_xval.txt'%id
     if os.path.exists(file_name): 
         # if file exists, read the x values
@@ -438,10 +434,12 @@ def position():
         n2 = n/2
         
         for i,w in enumerate(wells):
+            # wells are put in the middle
             w.x = n2 + 1 + i + 0.
             
         #end for
         for i,b in enumerate(bimolecs):
+            # bimolecular products are put on both sides
             if i < n2:
                 b.x = 1 + i + 0.
             else:
@@ -451,6 +449,7 @@ def position():
             
         #end for
         for i,t in enumerate(tss):
+            # transition states are put inbetween the reactant and proudct
             x1 = t.reactant.x
             x2 = t.product.x
             y1 = t.reactant.y
@@ -488,9 +487,10 @@ def generate_lines():
 
 def get_sizes():
     """
-    Get the ax lengths and the sizes of the images
+    Get the axis lengths and the sizes of the images
     """
     global fh,fw, xlow, xhigh,xmargin, ylow, yhigh, ymargin, imh, imw
+    # TODO: what if wells or bimoleculs is empty, min and max functions will give error
     xlow = min(min([w.x for w in wells]),min([b.x for b in bimolecs])) # x coords of tss are always inbetween stable species
     xhigh = max(max([w.x for w in wells]),max([b.x for b in bimolecs])) 
     xmargin = 0.20*(xhigh-xlow) # take a 20% margin
@@ -498,7 +498,7 @@ def get_sizes():
     yhigh = max([t.y for t in tss]) #  all wells and bimolec products lie below the highest ts
     ymargin = 0.20*(yhigh-ylow) # take a 20% margin
     imh = (yhigh-ylow)/6. # height of the images
-    imw = fh/fw*imh*(xhigh-xlow)/(yhigh-ylow) # width of the images
+    imw = fh/fw*imh*(xhigh-xlow)/(yhigh-ylow) # width of the images (assume squared images)
 #end def
 
 def plot():
@@ -515,6 +515,13 @@ def plot():
             if struct.name in extsd:
                 extent = extsd[struct.name]
             else:
+                dpi = 80.
+                imy = len(img) + 0.
+                imx = len(img[0]) + 0.
+                imw = (xhigh-xlow+0.)/(fw+0.)*imx/dpi
+                imh = (yhigh-ylow+0.)/(fh+0.)*imy/dpi
+                
+                #imw = (fh+0.)/(fw+0.)*imh*(xhigh-xlow+0.)/(yhigh-ylow+0.)*imx/imy
                 if isinstance(struct,bimolec):
                     if struct.x > (xhigh-xlow)/2.:
                         extent=(struct.x + xmargin/5 , struct.x +  xmargin/5 + imw, struct.y-imh/2, struct.y+imh/2)
@@ -595,7 +602,7 @@ def plot():
         t=None
          # at this point, put the energy value below the actual energy, 
          # with this loop it is possible to put it next to it (on the correct side)
-        if b.x > (xlow+(xhigh-xlow)/2.):
+        if b.x > (xhigh-xlow)/2.:
             t=ax.text(b.x+xmargin/30,b.y, '%.1f'%(b.y),ha='left',va='center',color='red', picker=True)
         else: 
             t=ax.text(b.x-xmargin/30,b.y, '%.1f'%(b.y),ha='right',va='center',color='red', picker=True)
@@ -603,11 +610,14 @@ def plot():
         textd[b] = t # add to dictionary with the well it belongs to as key
     #end for
     for t in tss:
-        te=ax.text(t.x,t.y+ymargin/30, '%.1f'%(t.y),ha='center',va='bottom',color='green',fontweight='bold', picker=True)
+        #te=ax.text(t.x,t.y+ymargin/30, '%.1f'%(t.y),ha='center',va='bottom',color='green',fontweight='bold', picker=True)
+        te=ax.text(t.x,t.y+ymargin/30, '%.1f'%(t.y),ha='center',va='bottom',color='green', picker=True)
         textd[t]=te # add to dictionary with the well it belongs to as key
     #end for
     
+    #plt.imshow(img)
     sel = selecthandler()
+    #dragh = draghandler()
     dragi = dragimage()
     
     plt.title('Potential energy surface of %s'%id)
@@ -637,21 +647,83 @@ def generate_2d_depiction():
             #end for
             return smis
     #end def
-        
+
     def generate_2d(m,smis):
         # name and path of png file
         png = '%s_2d/%s_2d.png'%(id,m.name)
-        if not os.path.exists(png):
+        if not os.path.exists('png'):
             if len(smis) > 0:
                 smi = string.join(smis,'.')
                 try:
                     mol = Chem.MolFromSmiles(smi)
                     AllChem.Compute2DCoords(mol)
-                    Draw.MolToFile(mol,png,size=(120,120),fitImage=True)
+                    cc=mol.GetConformer()
+                    xx=[];yy=[]
+                    for i in range(cc.GetNumAtoms()):
+                       pos=cc.GetAtomPosition(i)
+                       xx.append(pos.x); yy.append(pos.y)
+                    # end for
+                    sc=50
+                    dx=(max(xx)-min(xx))*sc+30
+                    dy=(max(yy)-min(yy))*sc+30
+
+                    if type(dx)!=type(1): dx=int(dx)
+                    if type(dy)!=type(1): dy=int(dy)
+                    Draw.MolToFile(mol,png,size=(dx,dy),kekulize=False)
+                    im = Image.open(png)
+                    im.load()
+                    ix_low = im.getbbox()[0]
+                    ix_high = im.getbbox()[2]
+                    iy_low = im.getbbox()[1]
+                    iy_high = im.getbbox()[3]
+                    
+                    ar = asarray(im)
+
+                    for i,row in enumerate(ar):
+                        if not all([ c == [255,255,255] for c in row]):
+                            if i > 10:
+                                iy_low = i-10
+                            else:
+                                iy_low = i
+                            #end if
+                            break
+                        #end if
+                    #end for
+                    for j,col in enumerate(ar.swapaxes(0,1)):
+                        if not all([ c == [255,255,255] for c in col]):
+                            if j > 10:
+                                ix_low = j-10
+                            else:
+                                ix_low = j
+                            #end if
+                            break
+                        #end if
+                    #end for
+                    for k,revrow in reversed(list(enumerate(ar))):
+                        if not all([ c == [255,255,255] for c in revrow]):
+                            if k < iy_high - 10:
+                                iy_high = k+10
+                            else:
+                                iy_high = k
+                            #end if
+                            break
+                        #end if
+                    #end for
+                    for l,revcol in reversed(list(enumerate(ar.swapaxes(0,1)))):
+                        if not all([ c == [255,255,255] for c in revcol]):
+                            if k < ix_high - 10:
+                                ix_high = l+10
+                            else:
+                                ix_high = l
+                            #end if
+                            break
+                        #end if
+                    #end for
+                    im.crop((ix_low,iy_low,ix_high,iy_high)).save(png)
                 except NameError:
                     try:
                         obmol = pybel.readstring("smi",smi)
-                        obmol.draw(show=False,filename=png)
+                        #obmol.draw(show=False,filename=png)
                     except NameError:
                         print 'Could not generate 2d for %s'%m.name
                     #end try
@@ -680,25 +752,10 @@ def generate_2d_depiction():
 
 def updateplot(struct,x_change):
     """
-    Update the plot after the drag event of a text item (dragged), move all related objects
+    Update the plot after the drag event of a stationary point (struct), move all related objects
     by x_change in the x direction, and regenerate the corresponding lines
     """
     global fh,fw, xlow, xhigh,xmargin, ylow, yhigh, ymargin, imh, imw
-
-    """
-    if isinstance(textd[dragged],bimolec):
-        # (TODO) add the text width to the positioning of the line and the image
-        if dragged.get_position()[0] > (xhigh-xlow)/2:
-            bbox = dragged.set_ha('left')
-            textd[dragged].x = dragged.get_position()[0]-xmargin/30
-        else:
-            bbox = dragged.set_ha('right')
-            textd[dragged].x = dragged.get_position()[0]+xmargin/30
-        #end if
-    else:
-        textd[dragged].x = dragged.get_position()[0]
-    #end if
-    """
     # set the new sizes of the figure
     get_sizes()
     plt.gca().set_xlim([xlow-xmargin,xhigh+xmargin])
@@ -709,17 +766,6 @@ def updateplot(struct,x_change):
         extent_change = (x_change,x_change,0,0)
         extent =  [old_extent[i] + extent_change[i] for i in range(0,4)]
         imgsd[struct].set_extent(extent=extent)
-        """
-        if isinstance(struct,bimolec):
-            if struct.x > (xhigh-xlow)/2.:
-                imgsd[struct].set_extent(extent=(struct.x + xmargin/10 , struct.x +  xmargin/10 + imw, struct.y-imh/2, struct.y+imh/2))
-            else:
-                imgsd[struct].set_extent(extent=(struct.x - xmargin/10 - imw, struct.x -  xmargin/10, struct.y-imh/2, struct.y+imh/2))
-            #end if
-        else:
-            imgsd[struct].set_extent(extent=(struct.x - imw/2., struct.x + imw/2., struct.y-ymargin/20 - imh, struct.y-ymargin/20))
-        #end if
-        """
     #end if
     # generate new coordinates for the text
     if struct in textd:
@@ -769,7 +815,7 @@ def updateplot(struct,x_change):
 def highlight_structure(struct=None):
     """
     for all the lines, text and structures that are not directly connected to struct,
-    set alpha to 0.15 
+    set alpha to 0.15
     """
     if struct == None:
         alpha = 1.
