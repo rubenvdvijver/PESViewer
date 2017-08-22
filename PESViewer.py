@@ -4,6 +4,7 @@ and barrierless reactions and creates a PES plot
 """
 
 import os,sys,string
+from sys import modules
 import subprocess
 import matplotlib.pyplot
 from matplotlib import pylab as plt
@@ -11,6 +12,7 @@ from matplotlib.text import Text
 import matplotlib.image as mpimg
 import numpy as np
 import numpy.linalg as la
+import math
 try:
     #sys.path.insert(0,os.environ['CHEMINFO'])
     import rdkit.Chem as Chem
@@ -19,7 +21,12 @@ try:
 except ImportError:
     pass
 #end try
-import pybel
+try:
+    import pybel
+except ImportError:
+    pass
+#end try
+
 from PIL import Image
 
 fname = 'input.txt'
@@ -44,7 +51,7 @@ bimolecs = [] # list of bimolecular products
 tss = [] #list of transition states
 barrierlesss = [] # list of barrierless reactions
 
-#text dictionary: key is the text of a chemical structure, value is the structure
+#text dictionary: key is the chemical structure, value is the text
 textd = {}
 #lines dictionary: key is the chemical structure, value is a list of lines for that structure
 linesd = {}
@@ -52,6 +59,14 @@ linesd = {}
 imgsd = {}
 #extents of the images
 extsd = {}
+
+
+class mouseeventhandler(object):
+     """
+    Class to (1) drag an image (2) select, hihglight and render 3d (TODO) of stationary points
+    and (3) drag the stationary points
+    """
+#end class
 
 class dragimage(object):
     """
@@ -82,12 +97,6 @@ class dragimage(object):
                 break
             #end if
         #end for
-        if self.struct != None:
-            #xc =self.struct.x 
-            #yc =self.struct.y
-            #self.img.set_extent(extent=(xc - imw, xc + imw, yc-ymargin/20 - 2*imh, yc-ymargin/20))
-            highlight_structure(self.struct)
-        #end if
     #end def
     
     def move_image(self, event):
@@ -106,7 +115,6 @@ class dragimage(object):
         if self.img!= None:
             self.struct=None
             self.img=None
-            restore()
             save_im_extent()
             #end if
         #end if
@@ -114,50 +122,77 @@ class dragimage(object):
     
 #end class
 
-class draghandler(object):
+class selecthandler(object):
     """ 
-    Class to handle Drag n Drop.
-    This is a simple case, which works for Text objects only
+    Class to select and move stationary points, which highlight its reactions
+    and in the future (TODO) renders the 3D images
     """
-    def __init__(self, figure=None) :
+    def __init__(self, figure=None):
         if figure is None : figure = plt.gcf()
-        # simple attibute to store the dragged text object
-        self.dragged = None
-        # Connect events and callbacks
-        figure.canvas.mpl_connect("pick_event", self.on_pick_event)
+        self.struct = None
+        self.proc = []
+        figure.canvas.mpl_connect("button_press_event", self.on_pick_event)
         figure.canvas.mpl_connect("button_release_event", self.on_release_event)
         figure.canvas.mpl_connect("motion_notify_event", self.motion_notify_event)
     #end def
     
-    def on_pick_event(self, event):
-        " Store which text object was picked and were the pick event occurs."
-        if isinstance(event.artist, Text):
-            self.dragged = event.artist
-            self.current_pos = (event.mouseevent.xdata,event.mouseevent.ydata)
-            highlight_structure(textd[self.dragged])
+    def on_pick_event(self,event):
+        self.struct = None
+        for w in wells:
+            if self.is_close(w,event):
+                self.struct = w
+                highlight_structure(self.struct)
+            #end if
+        #end for
+        for b in bimolecs:
+            if self.is_close(b,event):
+                self.struct = b
+                highlight_structure(self.struct)
+            #end if
+        #end for
+        for t in tss:
+            if self.is_close(t,event):
+                self.struct = t
+                highlight_structure(self.struct)
+            #end if
+        #end for
+        if self.struct == None:
+            highlight_structure()
+            for p in self.proc:
+                p.terminate()
+            #end for
+            del self.proc[:]
         #end if
-        return True
     #end def
-    
+
     def motion_notify_event(self, event):
-        if self.dragged is not None :
-            old_pos = self.dragged.get_position()
+        if self.struct is not None :
+            old_pos = (self.struct.x,self.struct.y)
             new_pos = (event.xdata,old_pos[1])
-            self.dragged.set_position(new_pos)
-            updateplot(self.dragged,(event.xdata-old_pos[0]))
+            self.struct.x = event.xdata
+            updateplot(self.struct,(event.xdata-old_pos[0]))
             self.current_pos = old_pos
     #end def
     
     def on_release_event(self, event):
         " Update text position and redraw"
-        if self.dragged is not None :
-            self.dragged = None
-            restore()
+        if self.struct is not None :
+            self.struct = None
             save_x_values()
             save_im_extent()
         #end if
         return True
     #end def
+    
+    def is_close(self, struct,event):
+        """ 
+        An event is close if it comes within 2% of the stationary point
+        both in the x and in the y direction
+        """
+        xc = math.fabs(event.xdata - struct.x) < (xhigh-xlow)*0.02
+        yc = math.fabs(event.ydata - struct.y) < (yhigh-ylow)*0.02
+        return xc and yc
+#end class
 
 class line:
     """
@@ -198,13 +233,16 @@ class well:
         self.smi = smi
         self.x=0.
         self.y=0.
-        self.xyz_file='xyz/%s.xyz'%name
+        self.xyz_files = []
+        fn = 'xyz/%s.xyz'%name
+        if os.path.exists(fn):
+            self.xyz_files.append(fn)
     #end def
 #end class
 
 class bimolec:
     # Bimolec class, contains the name, both smiles and energy of a bimolecular product
-    def __init__(self,name,energy,smi=[],nr=2):
+    def __init__(self,name,energy,smi=[]):
         self.name = name
         self.energy = energy
         self.smi = smi
@@ -212,8 +250,12 @@ class bimolec:
         self.y=0.
         self.xyz_files=[]
         self.right=False # this bimolecular product is placed on the right side of the graph
-        for i in range(1,(nr+1)):
-            self.xyz_files.append('xyz/%s%i.xyz'%(name,i))
+        i=1
+        fn = 'xyz/%s%i.xyz'%(name,i)
+        while os.path.exists(fn):
+            self.xyz_files.append(fn)
+            i += 1
+            fn = 'xyz/%s%i.xyz'%(name,i)
         #end for
     #end def
 #end class
@@ -225,6 +267,10 @@ class ts:
     def __init__(self,name,names,energy):
         self.name = name
         self.energy = energy
+        self.xyz_files = []
+        fn = 'xyz/%s.xyz'%name
+        if os.path.exists(fn):
+            self.xyz_files.append(fn)
         self.reactant = next((w for w in wells if w.name == names[0]), None)
         if self.reactant == None: self.reactant = next((b for b in bimolecs if b.name == names[0]), None)
         if self.reactant == None: raise Exception('Did not recognize reactant %s for the transition state %s'%(names[0],name))
@@ -243,6 +289,10 @@ class barrierless:
     """
     def __init__(self,name,names):
         self.name = name
+        self.xyz_files = []
+        fn = 'xyz/%s.xyz'%name
+        if os.path.exists(fn):
+            self.xyz_files.append(fn)
         self.reactant = next((w for w in wells if w.name == names[0]), None)
         if self.reactant == None: self.reactant = next((b for b in bimolecs if b.name == names[0]), None)
         if self.reactant == None: raise Exception('Did not recognize reactant %s for the transition state %s'%(names[0],name))
@@ -415,7 +465,6 @@ def position():
             #end if
             x3 = (x1+x2)/2.
             t.x = x3
-            
         #end for
         save_x_values() # write the x values to a file
     #end if
@@ -456,26 +505,29 @@ def plot():
     """
     Plotter method takes all the lines and plots them in one graph
     """
-    global fh,fw, xlow, xhigh,xmargin, ylow, yhigh, ymargin, imh, imw
+    global fh,fw, xlow, xhigh, xmargin, ylow, yhigh, ymargin, imh, imw
     def showimage(struct):
         global ymargin, imh, imw
-        img=mpimg.imread('%s_2d/%s_2d.png'%(id,struct.name))
-        extent = None
-        if struct.name in extsd:
-            extent = extsd[struct.name]
-        else:
-            if isinstance(struct,bimolec):
-                if struct.x > (xhigh-xlow)/2.:
-                    extent=(struct.x + xmargin/5 , struct.x +  xmargin/5 + imw, struct.y-imh/2, struct.y+imh/2)
-                else:
-                    extent=(struct.x - xmargin/5 - imw, struct.x -  xmargin/5, struct.y-imh/2, struct.y+imh/2)
-                #end if
+        fn = '%s_2d/%s_2d.png'%(id,struct.name)
+        if os.path.exists(fn):
+            img=mpimg.imread(fn)
+            extent = None
+            if struct.name in extsd:
+                extent = extsd[struct.name]
             else:
-                extent=(struct.x - imw/2., struct.x + imw/2., struct.y-ymargin/20 - imh, struct.y-ymargin/20)
-            #end if
-        #end if  
-        im=ax.imshow(img, aspect='auto', extent=extent, zorder=-1)
-        imgsd[struct] = im # add to dictionary with the well it belongs to as key
+                if isinstance(struct,bimolec):
+                    if struct.x > (xhigh-xlow)/2.:
+                        extent=(struct.x + xmargin/5 , struct.x +  xmargin/5 + imw, struct.y-imh/2, struct.y+imh/2)
+                    else:
+                        extent=(struct.x - xmargin/5 - imw, struct.x -  xmargin/5, struct.y-imh/2, struct.y+imh/2)
+                    #end if
+                else:
+                    extent=(struct.x - imw/2., struct.x + imw/2., struct.y-ymargin/20 - imh, struct.y-ymargin/20)
+                #end if
+            #end if  
+            im=ax.imshow(img, aspect='auto', extent=extent, zorder=-1)
+            imgsd[struct] = im # add to dictionary with the well it belongs to as key
+        #end if
     #end def
     lines = []
     for t in tss:
@@ -537,27 +589,27 @@ def plot():
     # write the name and energies to the plot
     for w in wells:
         t = ax.text(w.x,w.y-ymargin/30, '%.1f'%(w.y),ha='center',va='top',color='blue', picker=True)
-        textd[t] = w # add to dictionary with the well it belongs to as key
+        textd[w] = t # add to dictionary with the well it belongs to as key
     #end for
     for b in bimolecs:
         t=None
          # at this point, put the energy value below the actual energy, 
          # with this loop it is possible to put it next to it (on the correct side)
-        if b.x > (xhigh-xlow)/2.:
+        if b.x > (xlow+(xhigh-xlow)/2.):
             t=ax.text(b.x+xmargin/30,b.y, '%.1f'%(b.y),ha='left',va='center',color='red', picker=True)
         else: 
             t=ax.text(b.x-xmargin/30,b.y, '%.1f'%(b.y),ha='right',va='center',color='red', picker=True)
         #end if
-        textd[t] = b # add to dictionary with the well it belongs to as key
+        textd[b] = t # add to dictionary with the well it belongs to as key
     #end for
     for t in tss:
         te=ax.text(t.x,t.y+ymargin/30, '%.1f'%(t.y),ha='center',va='bottom',color='green',fontweight='bold', picker=True)
-        textd[te]=t # add to dictionary with the well it belongs to as key
+        textd[t]=te # add to dictionary with the well it belongs to as key
     #end for
     
-    #plt.imshow(img)
-    dragh = draghandler()
+    sel = selecthandler()
     dragi = dragimage()
+    
     plt.title('Potential energy surface of %s'%id)
     plt.ylabel('Energy (%s)'%units)
     plt.show()
@@ -569,34 +621,41 @@ def generate_2d_depiction():
     2D depiction is generated (if not yet available) and stored in the directory join(input_id,'_2d')
     This is only done for the wells and bimolecular products, 2D of tss need to be supplied by the user
     """
-    def generate_2d(m,smis,files):
+    def get_smis(m,smis,files):
+        # name and path of png file
+        if len(smis) > 0:
+            return smis
+        elif all([os.path.exists(f) for f in files]):
+            smis = []
+            for f in files:
+                try:
+                    obmol = pybel.readfile('xyz',f).next()
+                    smis.append(obmol.write("smi").split()[0])
+                except NameError:
+                    print 'Could not generate smiles for %s'%m.name
+                #end try
+            #end for
+            return smis
+    #end def
+        
+    def generate_2d(m,smis):
         # name and path of png file
         png = '%s_2d/%s_2d.png'%(id,m.name)
         if not os.path.exists(png):
             if len(smis) > 0:
                 smi = string.join(smis,'.')
-                if module_exists(Chem):
+                try:
                     mol = Chem.MolFromSmiles(smi)
                     AllChem.Compute2DCoords(mol)
                     Draw.MolToFile(mol,png,size=(120,120),fitImage=True)
-                else:
-                    obmol = pybel.readstring("smi",smi)
-                    obmol.draw(show=False,filename=png)
-                #end if
-            elif all([os.path.exists(f) for f in files]):
-                smis = []
-                for f in files:
-                    obmol = pybel.readfile(f)
-                    smis.append[obmol.write]
-                #end for
-                if module_exists(Chem):
-                    mol = Chem.MolFromSmiles(smi)
-                    AllChem.Compute2DCoords(mol)
-                    Draw.MolToFile(mol,png,size=(120,120),fitImage=True)
-                else:
-                    obmol = pybel.readstring("smi",smi)
-                    obmol.draw(show=False,filename=png)
-                #end if
+                except NameError:
+                    try:
+                        obmol = pybel.readstring("smi",smi)
+                        obmol.draw(show=False,filename=png)
+                    except NameError:
+                        print 'Could not generate 2d for %s'%m.name
+                    #end try
+                #end try
             else:
                 # (TODO) add warning messages
                 print 'Could not generate 2d for %s'%m.name
@@ -612,21 +671,20 @@ def generate_2d_depiction():
     for w in wells:
         s = []
         if w.smi != None: s.append(w.smi)
-        generate_2d(w,s,[w.xyz_file])
+        generate_2d(w,get_smis(w,s,w.xyz_files))
     #end for
     for b in bimolecs:
-        generate_2d(b,b.smi,b.xyz_files)
+        generate_2d(b,get_smis(b,b.smi,b.xyz_files))
     #end for
 #end def
 
-def updateplot(dragged,x_change):
+def updateplot(struct,x_change):
     """
     Update the plot after the drag event of a text item (dragged), move all related objects
     by x_change in the x direction, and regenerate the corresponding lines
     """
     global fh,fw, xlow, xhigh,xmargin, ylow, yhigh, ymargin, imh, imw
-    
-    textd[dragged].x += x_change
+
     """
     if isinstance(textd[dragged],bimolec):
         # (TODO) add the text width to the positioning of the line and the image
@@ -646,8 +704,7 @@ def updateplot(dragged,x_change):
     plt.gca().set_xlim([xlow-xmargin,xhigh+xmargin])
     plt.gca().set_ylim([ylow-ymargin,yhigh+ymargin])
     # generate new coordinates for the images
-    if textd[dragged] in imgsd:
-        struct = textd[dragged]
+    if struct in imgsd:
         old_extent = imgsd[struct].get_extent()
         extent_change = (x_change,x_change,0,0)
         extent =  [old_extent[i] + extent_change[i] for i in range(0,4)]
@@ -664,11 +721,16 @@ def updateplot(dragged,x_change):
         #end if
         """
     #end if
+    # generate new coordinates for the text
+    if struct in textd:
+        old_pos = textd[struct].get_position()
+        new_pos = (old_pos[0]+x_change,old_pos[1])
+        textd[struct].set_position(new_pos)
     # generate new coordinates for the lines   
     for t in tss:
-        if (textd[dragged] == t or 
-        textd[dragged] == t.reactant or 
-        textd[dragged] == t.product):
+        if (struct == t or 
+        struct == t.reactant or 
+        struct == t.product):
             t.lines[0] = line(t.x,t.y,t.reactant.x,t.reactant.y,[t,t.reactant])
             t.lines[1] = line(t.x,t.y,t.product.x,t.product.y,[t,t.product])
             for i in range(0,2):
@@ -686,8 +748,8 @@ def updateplot(dragged,x_change):
         #end if 
     #end for
     for b in barrierlesss:
-        if (textd[dragged] == b.reactant or 
-        textd[dragged] == b.product):
+        if (struct == b.reactant or 
+        struct == b.product):
             b.line = line(b.reactant.x,b.reactant.y,b.product.x,b.product.y,[b.reactant,b.product])
             li=b.line
             if li.straight_line:
@@ -704,29 +766,16 @@ def updateplot(dragged,x_change):
     plt.draw()
 #end def
 
-def restore():
-    """
-    restore the highlighting, set the alpha of every element back to 1.
-    """
-    for struct in linesd:
-        for li in linesd[struct]:
-            li[0].set_color('black')
-        #end for
-    #end for
-    for te in textd:
-        te.set_alpha(1.)
-    #end for
-    for struct in imgsd:
-        imgsd[struct].set_alpha(1.)
-    #end for
-    plt.draw()
-#end def
-
-def highlight_structure(struct):
+def highlight_structure(struct=None):
     """
     for all the lines, text and structures that are not directly connected to struct,
-    set alpha to 0.2 and lines to light gray
+    set alpha to 0.15 
     """
+    if struct == None:
+        alpha = 1.
+    else:
+        alpha = 0.15
+    #end if
     # get all the tss and barrierlesss with this struct
     highlight = []
     lines = []
@@ -748,19 +797,25 @@ def highlight_structure(struct):
     #end for
     for struct in linesd:
         for li in linesd[struct]:
-            if not li in lines:
-                li[0].set_color('lightgray')
+            if li in lines:
+                li[0].set_alpha(1.)
+            else:
+                li[0].set_alpha(alpha)
             #end if
         #end for
     #end for
-    for te in textd:
-        if not textd[te] in highlight:
-            te.set_alpha(0.2)
+    for struct in textd:
+        if struct in highlight:
+            textd[struct].set_alpha(1.)
+        else:
+            textd[struct].set_alpha(alpha)
         #end if
     #end for
     for struct in imgsd:
-        if not struct in highlight:
-            imgsd[struct].set_alpha(0.2)
+        if struct in highlight:
+            imgsd[struct].set_alpha(1.)
+        else:
+            imgsd[struct].set_alpha(alpha)
         #end if
     #end for
     plt.draw()
