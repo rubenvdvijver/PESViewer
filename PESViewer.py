@@ -602,7 +602,7 @@ def plot():
         t=None
          # at this point, put the energy value below the actual energy, 
          # with this loop it is possible to put it next to it (on the correct side)
-        if b.x > (xhigh-xlow)/2.:
+        if b.x-xlow > (xhigh-xlow)/2.:
             t=ax.text(b.x+xmargin/30,b.y, '%.1f'%(b.y),ha='left',va='center',color='red', picker=True)
         else: 
             t=ax.text(b.x-xmargin/30,b.y, '%.1f'%(b.y),ha='right',va='center',color='red', picker=True)
