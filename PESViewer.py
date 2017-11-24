@@ -62,6 +62,10 @@ imgsd = {}
 #extents of the images
 extsd = {}
 
+#boolean that specifies which code was used for the 2D depiction
+#this is necessary to define the dpi of the pictures on the graph
+rdkit4depict = True
+
 class dragimage(object):
     """
     Class to drag an image 
@@ -505,9 +509,9 @@ def plot():
     """
     Plotter method takes all the lines and plots them in one graph
     """
-    global fh,fw, xlow, xhigh, xmargin, ylow, yhigh, ymargin, imh, imw
+    global fh,fw, xlow, xhigh, xmargin, ylow, yhigh, ymargin, imh, imw, rdkit4depict
     def showimage(struct):
-        global ymargin, imh, imw
+        global ymargin, imh, imw, rdkit4depict
         fn = '%s_2d/%s_2d.png'%(id,struct.name)
         if os.path.exists(fn):
             img=mpimg.imread(fn)
@@ -516,6 +520,9 @@ def plot():
                 extent = extsd[struct.name]
             else:
                 dpi = 80.
+                if not rdkit4depict:
+                    dpi = 120.
+                #end if
                 imy = len(img) + 0.
                 imx = len(img[0]) + 0.
                 imw = (xhigh-xlow+0.)/(fw+0.)*imx/dpi
@@ -631,6 +638,7 @@ def generate_2d_depiction():
     2D depiction is generated (if not yet available) and stored in the directory join(input_id,'_2d')
     This is only done for the wells and bimolecular products, 2D of tss need to be supplied by the user
     """
+    global rdkit4depict
     def get_smis(m,smis,files):
         # name and path of png file
         if len(smis) > 0:
@@ -649,9 +657,10 @@ def generate_2d_depiction():
     #end def
 
     def generate_2d(m,smis):
+        global rdkit4depict
         # name and path of png file
         png = '%s_2d/%s_2d.png'%(id,m.name)
-        if not os.path.exists('png'):
+        if not os.path.exists(png):
             if len(smis) > 0:
                 smi = string.join(smis,'.')
                 try:
@@ -721,9 +730,10 @@ def generate_2d_depiction():
                     #end for
                     im.crop((ix_low,iy_low,ix_high,iy_high)).save(png)
                 except NameError:
+                    rdkit4depict = False
                     try:
                         obmol = pybel.readstring("smi",smi)
-                        #obmol.draw(show=False,filename=png)
+                        obmol.draw(show=False,filename=png)
                     except NameError:
                         print 'Could not generate 2d for %s'%m.name
                     #end try
