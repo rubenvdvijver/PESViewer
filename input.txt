@@ -6,17 +6,28 @@ IMPORTANT: avoid the use of '2d' and '3d' in the names of species, transition st
 If you want to use 3D coordinates, store them in a xyz/ directory in the same directory as the python script
 
 This example is based on figure 1 in the article: 
-J Zádor et al.  Phys Chem Chem Phys 11 (46), 11040-11053. 2009 Oct 13.
+J Zador et al.  Phys Chem Chem Phys 11 (46), 11040-11053. 2009 Oct 13.
 
  
  
 > <id> propene_hydroxyl
 
-> <units> kcal/mol
-
-> <use_xyz> no
-
-> <rescale> 
+> <options> 
+units              kcal/mol  #energy units
+use_xyz            1         # use xyz, put 0  to switch off
+rescale            0         # no rescale , put the well or bimolecular name here to rescale to that value
+fh                 9.        # figure height
+fw                 18.       # figure width
+margin             0.2       # margin fraction on the x and y axis
+dpi                120       # dpi of the molecule figures
+save               0         # does the plot need to be saved (1) or displayed (0)
+write_ts_values    1         # booleans tell if the ts energy values should be written
+write_well_values  1         # booleans tell if the well and bimolecular energy values should be written
+bimol_color        red       # color of the energy values for the bimolecular products
+well_color         blue      # color of the energy values of the wells
+ts_color           green     # color or the energy values of the ts, put to 'none' to use same color as line
+show_images        1         # boolean tells whether the molecule images should be shown on the graph
+rdkit4depict       1         # boolean that specifies which code was used for the 2D depiction
 
 > <wells> 
 vdW -2.2 C[CH]CO

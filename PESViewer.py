@@ -10,7 +10,7 @@ import matplotlib.pyplot
 from matplotlib import pylab as plt
 from matplotlib.text import Text
 import matplotlib.image as mpimg
-from PIL import Image
+from PIL import Image, ImageOps
 import numpy as np
 from numpy import *
 import numpy.linalg as la
@@ -31,23 +31,17 @@ except ImportError:
 
 from PIL import Image
 
-fname = 'input.txt'
-id = 'pes_viewer_id'
-units = ''
-use_xyz = False
-rescale = ''
+#contains all the options for this PES
+options = {}
 
-fh = 9. # figure height d efault
-fw = 18. # figure width d efault
+#global parameters for the plot
 xlow = 0.0 # lowest x value on x axis
 xhigh = 0.0 # highest x value on x axis
 xmargin = 0.0 # margin on x axis
 ylow = 0.0 # lowest y value on x axis
 yhigh = 0.0 # highest y value on x axis
 ymargin = 0.0 # margin on y axis
-imh = 0.0 # height of the images
-imw = 0.0 # width of the images
-    
+
 wells = [] # list of wells
 bimolecs = [] # list of bimolecular products
 tss = [] #list of transition states
@@ -62,9 +56,6 @@ imgsd = {}
 #extents of the images
 extsd = {}
 
-#boolean that specifies which code was used for the 2D depiction
-#this is necessary to define the dpi of the pictures on the graph
-rdkit4depict = True
 
 class dragimage(object):
     """
@@ -197,7 +188,7 @@ class line:
     the chemstructs are the reactant and ts (f orward), 
     ts and product (reverse), or reactant and product (barrierless)
     """
-    def __init__(self,x1,y1,x2,y2,chemstruct=[]):
+    def __init__(self,x1,y1,x2,y2,chemstruct=[],col = 'black'):
         if x1 <= x2:
             self.xmin = x1
             self.y1 = y1 # y1 corresponds to xmin
@@ -217,6 +208,7 @@ class line:
             self.coeffs=get_polynomial(self.xmin,self.y1,self.xmax,self.y2)
         #end if
         self.chemstruct = chemstruct
+        self.color = col
     #end def
 #end class
 
@@ -259,9 +251,10 @@ class ts:
     """
     TS class, contains the name, the names of the reactant and product and the energy of the ts
     """
-    def __init__(self,name,names,energy):
+    def __init__(self,name,names,energy,col='black'):
         self.name = name
         self.energy = energy
+        self.color = col
         self.xyz_files = []
         fn = 'xyz/%s.xyz'%name
         if os.path.exists(fn):
@@ -282,9 +275,10 @@ class barrierless:
     """
     Barrierless class, contains the name and the names of the reactant and product 
     """
-    def __init__(self,name,names):
+    def __init__(self,name,names,col='black'):
         self.name = name
         self.xyz_files = []
+        self.color = col
         fn = 'xyz/%s.xyz'%name
         if os.path.exists(fn):
             self.xyz_files.append(fn)
@@ -315,11 +309,10 @@ def get_polynomial(x1,y1,x2,y2):
         return np.transpose(a).tolist()[0]
 #end def
 
-def read_input():
+def read_input(fname):
     """
     Method to read the input file
     """
-    global id, rescale, units, use_xyz
     if not os.path.exists(fname): # check if file exists
         raise Exception(fname + ' does not exist')
     #end if
@@ -328,10 +321,73 @@ def read_input():
     f.close()
     a = a.replace('\r\n', '\n').replace('\r', '\n').replace('\n\n', '\n')
     inputs= get_sd_prop(a)
-    id = inputs['id'][0]
-    units = inputs['units'][0]
-    if len(inputs['rescale']) > 0: rescale = inputs['rescale'][0]
-    if len(inputs['use_xyz']) > 0: use_xyz = inputs['use_xyz'][0]=='yes'
+    options['id'] = inputs['id'][0]
+    
+    options['title'] = 1 #by default, print the graph title
+    options['units'] = 'kJ/mol' #default units
+    options['use_xyz'] = 1 #use xyz by default, put 0  to switch off
+    options['rescale'] = 0 #no rescale as default, put the well or bimolecular name here to rescale to that value
+    options['fh'] = 9. # default figure height
+    options['fw'] = 18. # default figure width
+    options['margin'] = 0.2 #default margin on the x and y axis
+    options['dpi'] = 120 # default dpi of the molecule figures
+    options['save'] = 0 #does the plot need to be saved (1) or displayed (0)
+    options['write_ts_values'] = 1 #booleans tell if the ts energy values should be written
+    options['write_well_values'] = 1 #booleans tell if the well and bimolecular energy values should be written
+    options['bimol_color'] = 'red' #color of the energy values for the bimolecular products
+    options['well_color'] = 'blue' #color of the energy values of the wells
+    options['ts_color'] = 'none' #color or the energy values of the ts, put to 'none' to use same color as line
+    options['show_images'] = 1 #boolean tells whether the molecule images should be shown on the graph
+    options['rdkit4depict'] = 1 #boolean that specifies which code was used for the 2D depiction
+    
+    if 'options' in inputs:
+        for line in inputs['options']:
+            if line.startswith('title'):
+                options['title'] = int(line.split()[1])
+            elif line.startswith('units'):
+                options['units'] = line.split()[1]
+            elif line.startswith('use_xyz'):
+                options['use_xyz'] = int(line.split()[1])
+            elif line.startswith('rescale'):
+                options['rescale'] = line.split()[1]
+            elif line.startswith('fh'):
+                options['fh'] = float(line.split()[1])
+            elif line.startswith('fw'):
+                options['fw'] = float(line.split()[1])
+            elif line.startswith('margin'):
+                options['margin'] = float(line.split()[1])
+            elif line.startswith('dpi'):
+                options['dpi'] = int(line.split()[1])
+            elif line.startswith('save'):
+                options['save'] = int(line.split()[1])
+            elif line.startswith('write_ts_values'):
+                options['write_ts_values'] = int(line.split()[1])
+            elif line.startswith('write_well_values'):
+                options['write_well_values'] = int(line.split()[1])
+            elif line.startswith('bimol_color'):
+                options['bimol_color'] = line.split()[1]
+            elif line.startswith('well_color'):
+                options['well_color'] = line.split()[1]
+            elif line.startswith('ts_color'):
+                options['ts_color'] = line.split()[1]
+            elif line.startswith('show_images'):
+                options['show_images'] = int(line.split()[1])
+            elif line.startswith('rdkit4depict'):
+                options['rdkit4depict'] = int(line.split()[1])
+            elif line.startswith('#'):
+                #comment line, don't do anything
+                continue
+            else:
+                if len(line) > 0:
+                    print 'Cannot recognize input line:'
+                    print line
+                #end if
+            #end if
+        #end for
+    else:
+        print 'Warning, the input file arcitecture has changed, use an "options" input tag to put all the options'
+    #end if
+    
     for w in inputs['wells']:
         w = w.split()
         name = w[0];
@@ -361,16 +417,27 @@ def read_input():
         name = t[0];
         energy = eval(t[1])
         names = [t[2],t[3]]
-        t = ts(name,names,energy)
+        col = 'black'
+        if len(t) > 4:
+            col = t[4]
+        t = ts(name,names,energy,col=col)
         tss.append(t)
     #end for
     for b in inputs['barrierless']:
         b = b.split()
         name = b[0];
         names = [b[1],b[2]]
-        b = barrierless(name,names)
+        col = 'black'
+        if len(b) > 4:
+            col = b[4]
+        b = barrierless(name,names,col=col)
         barrierlesss.append(b)
     #end for
+
+
+
+
+
 #end def
 
 def get_sd_prop(all_lines):
@@ -400,8 +467,8 @@ def position():
     """
     #do the rescaling, i.e. find the y values
     # y0 is the energy of the species to which rescaling is done
-    y0 = next((w.energy for w in wells if w.name == rescale), 0.)
-    if y0 == 0.: y0 = next((b.energy for b in bimolecs if b.name == rescale), 0.)
+    y0 = next((w.energy for w in wells if w.name == options['rescale']), 0.)
+    if y0 == 0.: y0 = next((b.energy for b in bimolecs if b.name == options['rescale']), 0.)
     for w in wells:
         w.y = w.energy - y0
     #end for
@@ -413,7 +480,7 @@ def position():
     #end for
     # find the x values
  
-    file_name = '%s_xval.txt'%id
+    file_name = '%s_xval.txt'%options['id']
     if os.path.exists(file_name): 
         # if file exists, read the x values
         fi = open(file_name,'r')
@@ -479,13 +546,13 @@ def generate_lines():
     and creates lines accordingly depending on the x and y coordinates
     """
     for t in tss:
-        line1 = line(t.x,t.y,t.reactant.x,t.reactant.y,[t,t.reactant])
-        line2 = line(t.x,t.y,t.product.x,t.product.y,[t,t.product])
+        line1 = line(t.x,t.y,t.reactant.x,t.reactant.y,[t,t.reactant],col = t.color)
+        line2 = line(t.x,t.y,t.product.x,t.product.y,[t,t.product],col = t.color)
         t.lines.append(line1)
         t.lines.append(line2)
     #end for
     for b in barrierlesss:
-        b.line = line(b.reactant.x,b.reactant.y,b.product.x,b.product.y,[b,b.reactant,b.product])
+        b.line = line(b.reactant.x,b.reactant.y,b.product.x,b.product.y,[b,b.reactant,b.product], col = b.color)
     #end for
 #end def
 
@@ -493,52 +560,59 @@ def get_sizes():
     """
     Get the axis lengths and the sizes of the images
     """
-    global fh,fw, xlow, xhigh,xmargin, ylow, yhigh, ymargin, imh, imw
+    global xlow, xhigh,xmargin, ylow, yhigh, ymargin
     # TODO: what if wells or bimoleculs is empty, min and max functions will give error
-    xlow = min(min([w.x for w in wells]),min([b.x for b in bimolecs])) # x coords of tss are always inbetween stable species
-    xhigh = max(max([w.x for w in wells]),max([b.x for b in bimolecs])) 
-    xmargin = 0.20*(xhigh-xlow) # take a 20% margin
-    ylow = min(min([w.y for w in wells]),min([b.y for b in bimolecs])) #  all tss lie above the lowest well
-    yhigh = max([t.y for t in tss]) #  all wells and bimolec products lie below the highest ts
-    ymargin = 0.20*(yhigh-ylow) # take a 20% margin
-    imh = (yhigh-ylow)/6. # height of the images
-    imw = fh/fw*imh*(xhigh-xlow)/(yhigh-ylow) # width of the images (assume squared images)
+    if len(bimolecs) > 0:
+        xlow = min(min([w.x for w in wells]),min([b.x for b in bimolecs])) # x coords of tss are always inbetween stable species
+        xhigh = max(max([w.x for w in wells]),max([b.x for b in bimolecs])) 
+        ylow = min(min([w.y for w in wells]),min([b.y for b in bimolecs])) #  all tss lie above the lowest well
+    else:
+        xlow = min([w.x for w in wells]) # x coords of tss are always inbetween stable species
+        xhigh = max([w.x for w in wells]) 
+        ylow = min([w.y for w in wells]) #  all tss lie above the lowest well
+    xmargin = options['margin']*(xhigh-xlow)
+    yhigh = max([t.y for t in tss])
+    yhigh = max(yhigh,max([w.x for w in wells]))
+    if len(bimolecs) > 0:
+        yhigh = max(yhigh,max([b.y for b in bimolecs]))
+    ymargin = options['margin']*(yhigh-ylow)
 #end def
 
 def plot():
     """
     Plotter method takes all the lines and plots them in one graph
     """
-    global fh,fw, xlow, xhigh, xmargin, ylow, yhigh, ymargin, imh, imw, rdkit4depict
+    global xlow, xhigh, xmargin, ylow, yhigh, ymargin
+            
     def showimage(struct):
-        global ymargin, imh, imw, rdkit4depict
-        fn = '%s_2d/%s_2d.png'%(id,struct.name)
+        global ymargin
+        fn = '%s_2d/%s_2d.png'%(options['id'],struct.name)
         if os.path.exists(fn):
             img=mpimg.imread(fn)
             extent = None
             if struct.name in extsd:
                 extent = extsd[struct.name]
             else:
-                dpi = 80.
-                if not rdkit4depict:
-                    dpi = 120.
+                
+                if not options['rdkit4depict']:
+                    options['dpi'] = 120
                 #end if
+
                 imy = len(img) + 0.
                 imx = len(img[0]) + 0.
-                imw = (xhigh-xlow+0.)/(fw+0.)*imx/dpi
-                imh = (yhigh-ylow+0.)/(fh+0.)*imy/dpi
+                imw = (xhigh-xlow+0.)/(options['fw']+0.)*imx/options['dpi']
+                imh = (yhigh-ylow+0.)/(options['fh']+0.)*imy/options['dpi']
                 
-                #imw = (fh+0.)/(fw+0.)*imh*(xhigh-xlow+0.)/(yhigh-ylow+0.)*imx/imy
                 if isinstance(struct,bimolec):
                     if struct.x > (xhigh-xlow)/2.:
-                        extent=(struct.x + xmargin/5 , struct.x +  xmargin/5 + imw, struct.y-imh/2, struct.y+imh/2)
+                        extent=(struct.x + xmargin/5. , struct.x +  xmargin/5. + imw, struct.y-imh/2., struct.y+imh/2.)
                     else:
-                        extent=(struct.x - xmargin/5 - imw, struct.x -  xmargin/5, struct.y-imh/2, struct.y+imh/2)
+                        extent=(struct.x - xmargin/5. - imw, struct.x -  xmargin/5., struct.y-imh/2., struct.y+imh/2.)
                     #end if
                 else:
-                    extent=(struct.x - imw/2., struct.x + imw/2., struct.y-ymargin/20 - imh, struct.y-ymargin/20)
+                    extent=(struct.x - imw/2., struct.x + imw/2., struct.y-ymargin/5. - imh, struct.y-ymargin/5.)
                 #end if
-            #end if  
+            #end if 
             im=ax.imshow(img, aspect='auto', extent=extent, zorder=-1)
             imgsd[struct] = im # add to dictionary with the well it belongs to as key
         #end if
@@ -552,35 +626,53 @@ def plot():
         lines.append(b.line)
     #end for
     get_sizes()
-    plt.rcParams["figure.figsize"]=[fw,fh]
+    plt.rcParams["figure.figsize"]=[options['fw'],options['fh']]
     plt.rcParams["font.size"]=10
+    
+    
     matplotlib.rc("figure",facecolor="white")
     fig, ax = plt.subplots()
     ax.spines['top'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
     ax.spines['right'].set_visible(False)
+
     ax.xaxis.set_ticks_position('none')
     ax.yaxis.set_ticks_position('left')
     ax.set_xticklabels([])
-    for w in wells:
-        showimage(w)
-    #end for
-    for b in bimolecs:
-        showimage(b)
-    #end for
+    
+    if options['show_images']:
+        for w in wells:
+            showimage(w)
+        #end for
+        for b in bimolecs:
+            showimage(b)
+        #end for
     save_im_extent() # save the positions of the images to a file
     for i,line in enumerate(lines):
+        
+        lw = 1.5
+        alpha = 1.0
+        #if line.color == 'b' or line.color == 'g':
+        #    lw = 4.
+        #else:
+        #    alpha = 0.2
+
+        ls = 'solid'
+        if line.color == 'gray':
+            ls = 'dashed'
+        elif line.color == 'blue' or line.color == 'b':
+            ls = 'dashed'
         if line.straight_line:
             if line.xmin == line.xmax: # plot a vertical line
                 ymin = min(line.y1,line.y2)
                 ymax = max(line.y1,line.y2)
-                a=ax.vlines(x = line.xmin,ymin=ymin,ymax=ymax,color='black')
+                a=ax.vlines(x = line.xmin,ymin=ymin,ymax=ymax,color=line.color, ls = ls,linewidth = lw, alpha = alpha)
                 for struct in line.chemstruct:
                     # add to the lines dictionary
                     linesd[struct].append(a)
                 #end for
             else: # plot a horizontal line
-                a=ax.hlines(y = line.y1,xmin=line.xmin,xmax=line.xmax,color='black')
+                a=ax.hlines(y = line.y1,xmin=line.xmin,xmax=line.xmax,color=line.color,linewidth = lw, alpha = alpha)
                 for struct in line.chemstruct:
                     # add to the lines dictionary
                     linesd[struct].append(a)
@@ -590,7 +682,7 @@ def plot():
             xlist = np.arange(line.xmin, line.xmax, (line.xmax-line.xmin)/1000)
             a = line.coeffs
             y = a[0]*xlist**3 + a[1]*xlist**2 + a[2]*xlist + a[3]
-            pl=ax.plot(xlist,y,color='black')
+            pl=ax.plot(xlist,y,color=line.color, ls = ls,linewidth = lw, alpha = alpha)
             for struct in line.chemstruct:
                 # add to the lines dictionary
                 linesd[struct].append(pl)
@@ -602,24 +694,38 @@ def plot():
     
     # write the name and energies to the plot
     for w in wells:
-        t = ax.text(w.x,w.y-ymargin/30, '%.1f'%(w.y),ha='center',va='top',color='blue', picker=True)
-        textd[w] = t # add to dictionary with the well it belongs to as key
+        if options['write_well_values']:
+            t = ax.text(w.x,w.y-ymargin/10, '%.1f'%(w.y),ha='center',va='top',color=options['well_color'], picker=True)
+            textd[w] = t # add to dictionary with the well it belongs to as key
+        #end if
     #end for
     for b in bimolecs:
-        t=None
-         # at this point, put the energy value below the actual energy, 
-         # with this loop it is possible to put it next to it (on the correct side)
-        if b.x-xlow > (xhigh-xlow)/2.:
-            t=ax.text(b.x+xmargin/30,b.y, '%.1f'%(b.y),ha='left',va='center',color='red', picker=True)
-        else: 
-            t=ax.text(b.x-xmargin/30,b.y, '%.1f'%(b.y),ha='right',va='center',color='red', picker=True)
+        if options['write_well_values']:
+            #write the text values below the line:
+            t = ax.text(b.x,b.y-ymargin/10, '%.1f'%(b.y),ha='center',va='top',color=options['bimol_color'], picker=True)
+            """
+            #write the text values next to the line:
+            t=None
+             # at this point, put the energy value below the actual energy, 
+             # with this loop it is possible to put it next to it (on the correct side)
+            if b.x-xlow > (xhigh-xlow)/2.:
+                t=ax.text(b.x+xmargin/30,b.y, '%.1f'%(b.y),ha='left',va='center',color=options['bimol_color'], picker=True)
+            else: 
+                t=ax.text(b.x-xmargin/30,b.y, '%.1f'%(b.y),ha='right',va='center',color=options['bimol_color'], picker=True)
+            #end if
+            """
+            textd[b] = t # add to dictionary with the well it belongs to as key
         #end if
-        textd[b] = t # add to dictionary with the well it belongs to as key
     #end for
     for t in tss:
-        #te=ax.text(t.x,t.y+ymargin/30, '%.1f'%(t.y),ha='center',va='bottom',color='green',fontweight='bold', picker=True)
-        te=ax.text(t.x,t.y+ymargin/30, '%.1f'%(t.y),ha='center',va='bottom',color='green', picker=True)
-        textd[t]=te # add to dictionary with the well it belongs to as key
+        if options['write_ts_values']:
+            #te=ax.text(t.x,t.y+ymargin/30, '%.1f'%(t.y),ha='center',va='bottom',color='green',fontweight='bold', picker=True)
+            color = t.color
+            if options['ts_color'] != 'none':
+                color = options['ts_color']
+            te=ax.text(t.x,t.y+ymargin/30, '%.1f'%(t.y),ha='center',va='bottom',color=color, picker=True)
+            textd[t]=te # add to dictionary with the well it belongs to as key
+        #end if
     #end for
     
     #plt.imshow(img)
@@ -627,10 +733,13 @@ def plot():
     #dragh = draghandler()
     dragi = dragimage()
     
-    plt.title('Potential energy surface of %s'%id)
-    plt.ylabel('Energy (%s)'%units)
-    plt.show()
-    #plt.savefig('plot.png')
+    if options['title']:
+        plt.title('Potential energy surface of %s'%options['id'])
+    plt.ylabel('Energy (%s)'%options['units'])
+    if options['save']: 
+        plt.savefig('%s_pes_plot.png'%options['id'],bbox_inches='tight')
+    else:
+        plt.show()
 #end def
 
 def generate_2d_depiction():
@@ -638,7 +747,6 @@ def generate_2d_depiction():
     2D depiction is generated (if not yet available) and stored in the directory join(input_id,'_2d')
     This is only done for the wells and bimolecular products, 2D of tss need to be supplied by the user
     """
-    global rdkit4depict
     def get_smis(m,smis,files):
         # name and path of png file
         if len(smis) > 0:
@@ -657,87 +765,88 @@ def generate_2d_depiction():
     #end def
 
     def generate_2d(m,smis):
-        global rdkit4depict
         # name and path of png file
-        png = '%s_2d/%s_2d.png'%(id,m.name)
+        png = '%s_2d/%s_2d.png'%(options['id'],m.name)
         if not os.path.exists(png):
             if len(smis) > 0:
                 smi = string.join(smis,'.')
                 try:
-                    mol = Chem.MolFromSmiles(smi)
-                    AllChem.Compute2DCoords(mol)
-                    cc=mol.GetConformer()
-                    xx=[];yy=[]
-                    for i in range(cc.GetNumAtoms()):
-                       pos=cc.GetAtomPosition(i)
-                       xx.append(pos.x); yy.append(pos.y)
-                    # end for
-                    sc=50
-                    dx=(max(xx)-min(xx))*sc+30
-                    dy=(max(yy)-min(yy))*sc+30
-
-                    if type(dx)!=type(1): dx=int(dx)
-                    if type(dy)!=type(1): dy=int(dy)
-                    Draw.MolToFile(mol,png,size=(dx,dy),kekulize=False)
-                    im = Image.open(png)
-                    im.load()
-                    ix_low = im.getbbox()[0]
-                    ix_high = im.getbbox()[2]
-                    iy_low = im.getbbox()[1]
-                    iy_high = im.getbbox()[3]
-                    
-                    ar = asarray(im)
-
-                    for i,row in enumerate(ar):
-                        if not all([ c == [255,255,255] for c in row]):
-                            if i > 10:
-                                iy_low = i-10
-                            else:
-                                iy_low = i
-                            #end if
-                            break
-                        #end if
-                    #end for
-                    for j,col in enumerate(ar.swapaxes(0,1)):
-                        if not all([ c == [255,255,255] for c in col]):
-                            if j > 10:
-                                ix_low = j-10
-                            else:
-                                ix_low = j
-                            #end if
-                            break
-                        #end if
-                    #end for
-                    for k,revrow in reversed(list(enumerate(ar))):
-                        if not all([ c == [255,255,255] for c in revrow]):
-                            if k < iy_high - 10:
-                                iy_high = k+10
-                            else:
-                                iy_high = k
-                            #end if
-                            break
-                        #end if
-                    #end for
-                    for l,revcol in reversed(list(enumerate(ar.swapaxes(0,1)))):
-                        if not all([ c == [255,255,255] for c in revcol]):
-                            if k < ix_high - 10:
-                                ix_high = l+10
-                            else:
-                                ix_high = l
-                            #end if
-                            break
-                        #end if
-                    #end for
-                    im.crop((ix_low,iy_low,ix_high,iy_high)).save(png)
+                    options['rdkit4depict'] = 0
+                    obmol = pybel.readstring("smi",smi)
+                    obmol.draw(show=False,filename=png)
                 except NameError:
-                    rdkit4depict = False
                     try:
-                        obmol = pybel.readstring("smi",smi)
-                        obmol.draw(show=False,filename=png)
+                        mol = Chem.MolFromSmiles(smi)
+                        AllChem.Compute2DCoords(mol)
+                        cc=mol.GetConformer()
+                        xx=[];yy=[]
+                        for i in range(cc.GetNumAtoms()):
+                            pos=cc.GetAtomPosition(i)
+                            xx.append(pos.x); yy.append(pos.y)
+                        # end for
+                        sc=50
+                        dx=(max(xx)-min(xx))*sc+30
+                        dy=(max(yy)-min(yy))*sc+30
+                        if type(dx)!=type(1): dx=int(dx)
+                        if type(dy)!=type(1): dy=int(dy)
+                        Draw.MolToFile(mol,png,size=(dx,dy),kekulize=False)
                     except NameError:
                         print 'Could not generate 2d for %s'%m.name
                     #end try
                 #end try
+                
+                im = Image.open(png)
+                im.load()
+                ix_low = im.getbbox()[0]
+                ix_high = im.getbbox()[2]
+                iy_low = im.getbbox()[1]
+                iy_high = im.getbbox()[3]
+                
+                ar = asarray(im)
+                    
+                for i,row in enumerate(ar):
+                    if not all([ all(c == [255,255,255]) or all(c == [255,255,255,255]) for c in row]):
+                        if i > 10:
+                            iy_low = i-10
+                        else:
+                            iy_low = i
+                        #end if
+                        break
+                    #end if
+                #end for
+                for j,col in enumerate(ar.swapaxes(0,1)):
+                    if not all([ all(c == [255,255,255]) or all(c == [255,255,255,255]) for c in col]):
+                        if j > 10:
+                            ix_low = j-10
+                        else:
+                            ix_low = j
+                        #end if
+                        break
+                    #end if
+                #end for
+                for k,revrow in reversed(list(enumerate(ar))):
+                    if not all([ all(c == [255,255,255]) or all(c == [255,255,255,255]) for c in revrow]):
+                        if k < iy_high - 10:
+                            iy_high = k+10
+                        else:
+                            iy_high = k
+                        #end if
+                        break
+                    #end if
+                #end for
+                for l,revcol in reversed(list(enumerate(ar.swapaxes(0,1)))):
+                    if not all([ all(c == [255,255,255]) or all(c == [255,255,255,255]) for c in revcol]):
+                        if k < ix_high - 10:
+                            ix_high = l+10
+                        else:
+                            ix_high = l
+                        #end if
+                        break
+                    #end if
+                #end for
+                im.crop((ix_low,iy_low,ix_high,iy_high)).save(png)
+                img_with_border = ImageOps.expand(im.crop((ix_low,iy_low,ix_high,iy_high)),border=0,fill='black')
+                img_with_border.save(png)
             else:
                 # (TODO) add warning messages
                 print 'Could not generate 2d for %s'%m.name
@@ -745,7 +854,7 @@ def generate_2d_depiction():
         #end if
     #end def
     # make the directory with the 2d depictions, if not yet available
-    dir = id + '_2d'
+    dir = options['id'] + '_2d'
     try:
         os.stat(dir)
     except:
@@ -765,7 +874,7 @@ def updateplot(struct,x_change):
     Update the plot after the drag event of a stationary point (struct), move all related objects
     by x_change in the x direction, and regenerate the corresponding lines
     """
-    global fh,fw, xlow, xhigh,xmargin, ylow, yhigh, ymargin, imh, imw
+    global xlow, xhigh,xmargin, ylow, yhigh, ymargin
     # set the new sizes of the figure
     get_sizes()
     plt.gca().set_xlim([xlow-xmargin,xhigh+xmargin])
@@ -787,8 +896,8 @@ def updateplot(struct,x_change):
         if (struct == t or 
         struct == t.reactant or 
         struct == t.product):
-            t.lines[0] = line(t.x,t.y,t.reactant.x,t.reactant.y,[t,t.reactant])
-            t.lines[1] = line(t.x,t.y,t.product.x,t.product.y,[t,t.product])
+            t.lines[0] = line(t.x,t.y,t.reactant.x,t.reactant.y,[t,t.reactant],col = t.color)
+            t.lines[1] = line(t.x,t.y,t.product.x,t.product.y,[t,t.product],col = t.color)
             for i in range(0,2):
                 li=t.lines[i]
                 if li.straight_line:
@@ -806,7 +915,7 @@ def updateplot(struct,x_change):
     for b in barrierlesss:
         if (struct == b.reactant or 
         struct == b.product):
-            b.line = line(b.reactant.x,b.reactant.y,b.product.x,b.product.y,[b.reactant,b.product])
+            b.line = line(b.reactant.x,b.reactant.y,b.product.x,b.product.y,[b.reactant,b.product],col = b.color)
             li=b.line
             if li.straight_line:
                 print 'straight line'
@@ -881,10 +990,13 @@ def save_x_values():
     """
     save the x values of the stationary points to an external file
     """
-    fi = open('%s_xval.txt'%id,'w')
-    fi.write(string.join(['%s %.2f'%(w.name,w.x) for w in wells],'\n')+'\n')
-    fi.write(string.join(['%s %.2f'%(b.name,b.x) for b in bimolecs],'\n')+'\n')
-    fi.write(string.join(['%s %.2f'%(t.name,t.x) for t in tss],'\n'))
+    fi = open('%s_xval.txt'%options['id'],'w')
+    if len(wells) > 0:
+        fi.write(string.join(['%s %.2f'%(w.name,w.x) for w in wells],'\n')+'\n')
+    if len(bimolecs) > 0:
+        fi.write(string.join(['%s %.2f'%(b.name,b.x) for b in bimolecs],'\n')+'\n')
+    if len(tss) > 0:
+        fi.write(string.join(['%s %.2f'%(t.name,t.x) for t in tss],'\n'))
     fi.close()
 #end def
 
@@ -892,7 +1004,7 @@ def save_im_extent():
     """
     save the x values of the stationary points to an external file
     """
-    fi = open('%s_im_extent.txt'%id,'w')
+    fi = open('%s_im_extent.txt'%options['id'],'w')
     for key in imgsd:
         e = imgsd[key].get_extent()
         fi.write('%s %.2f %.2f %.2f %.2f\n'%(key.name,e[0],e[1],e[2],e[3]))
@@ -903,7 +1015,7 @@ def read_im_extent():
     """
     Read the extents of the images if they are present in a file_name
     """
-    fname = '%s_im_extent.txt'%id
+    fname = '%s_im_extent.txt'%options['id']
     if os.path.exists(fname):
         fi = open(fname,'r')
         a = fi.read()
@@ -922,11 +1034,14 @@ def main(argv):
     """
     Main method to run the PESViewer
     """
-    global fname
     if len(argv) > 1: # read the arguments 
         fname = argv[1]
+        options['save'] = 0
+        if len(argv) > 2:
+            if argv[2] == 'save': #argument to specify whether the plot needs to be saved or displayed
+                options['save'] = 1
     #end if
-    read_input() # read the input file 
+    read_input(fname) # read the input file 
     # initialize the dictionaries
     for w in wells:
         linesd[w]=[]
