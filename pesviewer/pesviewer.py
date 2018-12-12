@@ -664,7 +664,10 @@ def get_sizes():
         # all tss lie above the lowest well
         ylow = min([w.y for w in wells])
     xmargin = options['margin']*(xhigh-xlow)
-    yhigh = max([t.y for t in tss])
+    try:
+        yhigh = max([t.y for t in tss])
+    except ValueError:
+        yhigh = max([b.y for b in bimolecs])
     yhigh = max(yhigh, max([w.x for w in wells]))
     if len(bimolecs) > 0:
         yhigh = max(yhigh, max([b.y for b in bimolecs]))
