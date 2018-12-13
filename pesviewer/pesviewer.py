@@ -410,6 +410,10 @@ def read_input(fname):
     options['show_images'] = 1
     # boolean that specifies which code was used for the 2D depiction
     options['rdkit4depict'] = 1
+    # font size of the axes
+    options['axes_size'] = 10
+    # font size of the energy values
+    options['text_size'] = 10
 
     if 'options' in inputs:
         for line in inputs['options']:
@@ -445,6 +449,10 @@ def read_input(fname):
                 options['show_images'] = int(line.split()[1])
             elif line.startswith('rdkit4depict'):
                 options['rdkit4depict'] = int(line.split()[1])
+            elif line.startswith('axes_size'):
+                options['axes_size'] = float(line.split()[1])
+            elif line.startswith('text_size'):
+                options['text_size'] = float(line.split()[1])
             elif line.startswith('#'):
                 # comment line, don't do anything
                 continue
@@ -738,7 +746,7 @@ def plot():
     # end for
     get_sizes()
     plt.rcParams["figure.figsize"] = [options['fw'], options['fh']]
-    plt.rcParams["font.size"] = 10
+    plt.rcParams["font.size"] = options['axes_size']
 
     matplotlib.rc("figure", facecolor="white")
     fig, ax = plt.subplots()
@@ -763,7 +771,7 @@ def plot():
         alpha = 1.0
         ls = 'solid'
         if line.color == 'gray':
-            ls = 'dashed'
+            ls = 'dotted'
         elif line.color == 'blue' or line.color == 'b':
             ls = 'dashed'
         if line.straight_line:
@@ -820,6 +828,7 @@ def plot():
             t = ax.text(w.x,
                         w.y-ymargin/10,
                         '{:.1f}'.format(w.y),
+                        fontdict={'size': options['text_size']},
                         ha='center', va='top',
                         color=options['well_color'],
                         picker=True)
@@ -833,6 +842,7 @@ def plot():
             t = ax.text(b.x,
                         b.y-ymargin/10,
                         '{:.1f}'.format(b.y),
+                        fontdict={'size': options['text_size']},
                         ha='center',
                         va='top',
                         color=options['bimol_color'],
@@ -849,6 +859,7 @@ def plot():
             te = ax.text(t.x,
                          t.y+ymargin/30,
                          '{:.1f}'.format(t.y),
+                         fontdict={'size': options['text_size']},
                          ha='center',
                          va='bottom',
                          color=color,
