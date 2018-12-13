@@ -21,6 +21,7 @@ try:
 except ImportError:
     pass
 # end try
+
 # try import pybel
 try:
     import pybel
@@ -434,7 +435,8 @@ def read_input(fname):
             elif line.startswith('dpi'):
                 options['dpi'] = int(line.split()[1])
             elif line.startswith('save'):
-                options['save'] = int(line.split()[1])
+                if not options['save_from_command_line']:
+                    options['save'] = int(line.split()[1])
             elif line.startswith('write_ts_values'):
                 options['write_ts_values'] = int(line.split()[1])
             elif line.startswith('write_well_values'):
@@ -510,8 +512,8 @@ def read_input(fname):
         name = b[0]
         names = [b[1], b[2]]
         col = 'black'
-        if len(b) > 4:
-            col = b[4]
+        if len(b) > 3:
+            col = b[3]
         b = barrierless(name, names, col=col)
         barrierlesss.append(b)
     # end for
@@ -1215,10 +1217,12 @@ def main(argv):
     if len(argv) > 1:  # read the arguments
         fname = argv[1]
         options['save'] = 0
+        options['save_from_command_line'] = 0
         if len(argv) > 2:
             # argument to specify whether plot needs to be saved or displayed
             if argv[2] == 'save':
                 options['save'] = 1
+                options['save_from_command_line'] = 1
     # end if
     read_input(fname)  # read the input file
     # initialize the dictionaries
