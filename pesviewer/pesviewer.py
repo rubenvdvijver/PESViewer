@@ -6,7 +6,8 @@ barrierless reactions and creates a PES plot
 from __future__ import print_function, division
 import os
 import sys
-import matplotlib.pyplot
+import matplotlib
+matplotlib.use('TkAgg')
 from matplotlib import pylab as plt
 import matplotlib.image as mpimg
 from PIL import Image
