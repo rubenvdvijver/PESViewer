@@ -945,6 +945,7 @@ def generate_2d_depiction():
                         Draw.MolToFile(mol, png, size=(dx, dy), kekulize=False)
                     except NameError:
                         print('Could not generate 2d for {n}'.format(n=m.name))
+                        return
                     # end try
                 # end try
 
@@ -1001,6 +1002,7 @@ def generate_2d_depiction():
             else:
                 # (TODO) add warning messages
                 print('Could not generate 2d for {name}'.format(name=m.name))
+                return
             # end if
         # end if
     # end def
