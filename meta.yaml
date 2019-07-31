@@ -1,0 +1,27 @@
+# cmd: conda build . -c LCT -c rdkit -c openbabel
+package:
+    name: pesviewer
+    version: "1.0"
+
+source:
+    path: .
+
+requirements:
+    build:
+        - python
+        - numpy
+        - matplotlib
+        - pillow
+        - rdkit
+        - openbabel
+    run:
+        - python
+        - numpy
+        - matplotlib
+        - pillow
+        - rdkit
+        - openbabel
+       
+about:
+    home: https://github.com/rubenvdvijver/PESViewer
+    license: MIT
