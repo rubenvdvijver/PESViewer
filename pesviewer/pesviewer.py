@@ -28,6 +28,10 @@ try:
     import pybel
 except ImportError:
     pass
+try:
+    from openbabel import pybel
+except ImportError:
+    pass
 # end try
 
 # contains all the options for this PES
@@ -40,6 +44,7 @@ xmargin = 0.0  # margin on x axis
 ylow = 0.0  # lowest y value on x axis
 yhigh = 0.0  # highest y value on x axis
 ymargin = 0.0  # margin on y axis
+xlen = 1.0  # length of horizontal lines per st pt
 
 wells = []  # list of wells
 bimolecs = []  # list of bimolecular products
@@ -210,6 +215,8 @@ class line:
             self.xmax = x1
             self.y2 = y1  # y2 corresponds to xmax
         # end if
+        
+        
         if x1 == x2 or y1 == y2:
             self.straight_line = True
             self.coeffs = []
@@ -416,6 +423,8 @@ def read_input(fname):
     options['axes_size'] = 10
     # font size of the energy values
     options['text_size'] = 10
+    # use linear lines instead of a polynomial
+    options['linear_lines'] = 0
 
     if 'options' in inputs:
         for line in inputs['options']:
@@ -456,6 +465,8 @@ def read_input(fname):
                 options['axes_size'] = float(line.split()[1])
             elif line.startswith('text_size'):
                 options['text_size'] = float(line.split()[1])
+            elif line.startswith('linear_lines'):
+                options['linear_lines'] = int(line.split()[1])
             elif line.startswith('#'):
                 # comment line, don't do anything
                 continue
@@ -690,7 +701,7 @@ def plot():
     """
     Plotter method takes all the lines and plots them in one graph
     """
-    global xlow, xhigh, xmargin, ylow, yhigh, ymargin
+    global xlow, xhigh, xmargin, ylow, yhigh, ymargin, xlen
 
     def showimage(s):
         """
@@ -769,6 +780,12 @@ def plot():
             showimage(b)
         # end for
     save_im_extent()  # save the positions of the images to a file
+    
+    # draw the lines
+    # in case of linear lines, calculate the distance of the horizontal pieces
+    if options['linear_lines']:
+        xlen = (len(wells) + len(bimolecs)) / (4 * (xhigh - xlow))
+    
     for i, line in enumerate(lines):
         lw = 1.5
         alpha = 1.0
@@ -805,11 +822,16 @@ def plot():
                 # end for
             # end if
         else:
-            xlist = np.arange(line.xmin,
-                              line.xmax,
-                              (line.xmax-line.xmin) / 1000)
-            a = line.coeffs
-            y = a[0]*xlist**3 + a[1]*xlist**2 + a[2]*xlist + a[3]
+            if options['linear_lines']:
+                xlist = [line.xmin, line.xmin + xlen / 2,
+                         line.xmax - xlen / 2, line.xmax]
+                y = [line.y1, line.y1, line.y2, line.y2]
+            else:
+                xlist = np.arange(line.xmin,
+                                  line.xmax,
+                                  (line.xmax-line.xmin) / 1000)
+                a = line.coeffs
+                y = a[0]*xlist**3 + a[1]*xlist**2 + a[2]*xlist + a[3]
             pl = ax.plot(xlist,
                          y,
                          color=line.color,
@@ -1028,7 +1050,7 @@ def updateplot(struct, x_change):
     move all related objects by x_change in the x direction,
     and regenerate the corresponding lines
     """
-    global xlow, xhigh, xmargin, ylow, yhigh, ymargin
+    global xlow, xhigh, xmargin, ylow, yhigh, ymargin, xlen
     # set the new sizes of the figure
     get_sizes()
     plt.gca().set_xlim([xlow-xmargin, xhigh+xmargin])
@@ -1065,11 +1087,16 @@ def updateplot(struct, x_change):
                 if li.straight_line:
                     print('straight line')
                 else:
-                    xlist = np.arange(li.xmin,
-                                      li.xmax,
-                                      (li.xmax-li.xmin) / 1000)
-                    a = li.coeffs
-                    y = a[0]*xlist**3 + a[1]*xlist**2 + a[2]*xlist + a[3]
+                    if options['linear_lines']:
+                        xlist = [li.xmin, li.xmin + xlen / 2,
+                                 li.xmax - xlen / 2, li.xmax]
+                        y = [li.y1, li.y1, li.y2, li.y2]
+                    else:
+                        xlist = np.arange(li.xmin,
+                                          li.xmax,
+                                          (li.xmax-li.xmin) / 1000)
+                        a = li.coeffs
+                        y = a[0]*xlist**3 + a[1]*xlist**2 + a[2]*xlist + a[3]
                     linesd[t][i][0].set_xdata(xlist)
                     linesd[t][i][0].set_ydata(y)
                 # end if
@@ -1088,9 +1115,14 @@ def updateplot(struct, x_change):
             if li.straight_line:
                 print('straight line')
             else:
-                xlist = np.arange(li.xmin, li.xmax, (li.xmax-li.xmin) / 1000)
-                a = li.coeffs
-                y = a[0]*xlist**3 + a[1]*xlist**2 + a[2]*xlist + a[3]
+                if options['linear_lines']:
+                    xlist = [li.xmin, li.xmin + xlen / 2,
+                             li.xmax - xlen / 2, li.xmax]
+                    y = [li.y1, li.y1, li.y2, li.y2]
+                else:
+                    xlist = np.arange(li.xmin, li.xmax, (li.xmax-li.xmin) / 1000)
+                    a = li.coeffs
+                    y = a[0]*xlist**3 + a[1]*xlist**2 + a[2]*xlist + a[3]
                 linesd[b][0][0].set_xdata(xlist)
                 linesd[b][0][0].set_ydata(y)
             # end if
@@ -1224,6 +1256,9 @@ def main(argv):
             if argv[2] == 'save':
                 options['save'] = 1
                 options['save_from_command_line'] = 1
+    elif len(argv) == 1:
+        print('To use the pesviewer, supply an input file as argument.')
+        sys.exit(-1)
     # end if
     read_input(fname)  # read the input file
     # initialize the dictionaries
