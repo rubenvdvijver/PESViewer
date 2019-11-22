@@ -7,7 +7,7 @@ setup(
     entry_points={'console_scripts':[
         'pesviewer = pesviewer.pesviewer:main',
         ]},
-    install_requires=['matplotlib','numpy'],
+    install_requires=['matplotlib','numpy','Pillow'],
     
     author="Ruben Van de Vijver",
     author_email = "vandevijver.ruben@gmail.com",
