@@ -61,6 +61,7 @@ The plotting options (to be written in the input file) are:
 | rdkit4depict | 1 | boolean that specifies which code to use for the 2D depiction |
 | axes_size | 10 | font size of the axes |
 | text_size | 10 | font size of the energy values on the graph |
+| linear_lines | 0 | plot polynomials (0) or linear lines (1) between de stationary points |
 
 Optionally a folder xyz/ containing the xyz coordinates of the stationary points ($name.xyz)
 (for bimolecular products, use several xyz coordinates files ($name$index.xyz) )
