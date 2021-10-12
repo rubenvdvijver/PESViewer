@@ -934,8 +934,49 @@ def generate_2d_depiction():
                     print('Could not generate smiles for {n}'.format(n=m.name))
                 # end try
             # end for
-            return smis
+        return(smis)
     # end def
+
+    def reaction_smi():
+        """
+        Given a list of transition states and barrierless channels
+        write a reaction_smi.out file that contains the reactions as, e.g.:
+        OOC[CH2] = [OH] + O1CC1i  0.0  10.72  -16.11
+        The three numbers are the energy of the reactant, transition state and product.
+        The barrier height for barrierless reactions is given as max(Ereact,Eprod)
+        """
+
+        with open('reaction_smi.out', 'w') as f:
+            for t in tss:
+                t.reactant.smi = get_smis(t.reactant, [], t.reactant.xyz_files)
+                f.write(t.reactant.smi[0])
+                for r in t.reactant.smi[1:]:
+                    f.write(' + ')
+                    f.write(r)
+                f.write(' = ')
+                t.product.smi = get_smis(t.product, [], t.product.xyz_files)
+                f.write(t.product.smi[0])
+                for p in t.product.smi[1:]:
+                    f.write(' + ')
+                    f.write(p)
+                f.write('  {:.2f}  {:.2f}   {:.2f}'.format(t.reactant.energy, t.energy, t.product.energy))
+                f.write('\n')
+
+            for b in barrierlesss:
+                b.reactant.smi = get_smis(b.reactant, [], b.reactant.xyz_files)
+                f.write(b.reactant.smi[0])
+                for r in b.reactant.smi:
+                    f.write(' + ')
+                    f.write(r)
+                f.write(' = ')
+                b.product.smi = get_smis(b.product, [], b.product.xyz_files)
+                f.write(b.product.smi[0])
+                for p in b.product.smi:
+                    f.write(' + ')
+                    f.write(p)
+                f.write('  {:.2f}  {:.2f}  {:.2f}'.format(b.reactant.energy, max(b.reactant.energy, b.product.energy), b.product.energy))
+                f.write('\n')
+
 
     def generate_2d(m, smis):
         # name and path of png file
@@ -1045,6 +1086,9 @@ def generate_2d_depiction():
     for b in bimolecs:
         generate_2d(b, get_smis(b, b.smi, b.xyz_files))
     # end for
+
+    reaction_smi()  # write file with reaction string
+
 # end def
 
 
@@ -1245,6 +1289,9 @@ def read_im_extent():
         # end for
     # end if
 # end def
+
+
+
 
 
 def main(argv):
