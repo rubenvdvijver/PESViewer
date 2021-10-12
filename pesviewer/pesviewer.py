@@ -425,6 +425,8 @@ def read_input(fname):
     options['text_size'] = 10
     # use linear lines instead of a polynomial
     options['linear_lines'] = 0
+    # image interpolation
+    options['interpolation'] = 'hanning'
 
     if 'options' in inputs:
         for line in inputs['options']:
@@ -745,7 +747,7 @@ def plot():
                               s.y-ymargin/5.)
                 # end if
             # end if
-            im = ax.imshow(img, aspect='auto', extent=extent, zorder=-1)
+            im = ax.imshow(img, aspect='auto', extent=extent, zorder=-1, interpolation=options['interpolation'])
             # add to dictionary with the well it belongs to as key
             imgsd[s] = im
         # end if
