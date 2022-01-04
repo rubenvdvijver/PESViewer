@@ -1099,17 +1099,26 @@ def updateplot(struct, x_change):
     and regenerate the corresponding lines
     """
     global xlow, xhigh, xmargin, ylow, yhigh, ymargin, xlen
+    xlow_old = xlow
+    xhigh_old = xhigh
     # set the new sizes of the figure
     get_sizes()
     plt.gca().set_xlim([xlow-xmargin, xhigh+xmargin])
     plt.gca().set_ylim([ylow-ymargin, yhigh+ymargin])
+    ratio = (xhigh - xlow) / (xhigh_old - xlow_old)
     # generate new coordinates for the images
     if struct in imgsd:
         old_extent = imgsd[struct].get_extent()
         extent_change = (x_change, x_change, 0, 0)
         extent = [old_extent[i] + extent_change[i] for i in range(0, 4)]
         imgsd[struct].set_extent(extent=extent)
-    # end if
+    # need to scale all other images as well, but only doing it if 
+    # the overall width has changed
+    if ratio != 1:
+        for key in imgsd:
+            oe = imgsd[key].get_extent()  # old extent
+            extent = [oe[0], oe[0] + (oe[1] - oe[0]) * ratio, oe[2], oe[3]]
+            imgsd[key].set_extent(extent=extent)
     # generate new coordinates for the text
     if struct in textd:
         old_pos = textd[struct].get_position()
