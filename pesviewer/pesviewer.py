@@ -427,6 +427,8 @@ def read_input(fname):
     options['linear_lines'] = 0
     # image interpolation
     options['interpolation'] = 'hanning'
+    # graphs edge color, if set to 'energy', will be colored by that
+    options['graph_edge_color'] = None
 
     if 'options' in inputs:
         for line in inputs['options']:
@@ -469,6 +471,8 @@ def read_input(fname):
                 options['text_size'] = float(line.split()[1])
             elif line.startswith('linear_lines'):
                 options['linear_lines'] = int(line.split()[1])
+            elif line.startswith('graph_edge_color'):
+                options['graph_edge_color'] = str(line.split()[1])
             elif line.startswith('#'):
                 # comment line, don't do anything
                 continue
@@ -1332,14 +1336,14 @@ def create_interactive_graph():
     color_step = (color_max - color_min) / 256.
 
     for ts in tss:
-        red = round((ts.energy - color_min) / color_step)
-        green = 0
-        blue = round((color_max - ts.energy) / color_step)
-        if ts.col != 'black':
-            color = ts.color
-        else:
+        if options['graph_edge_color'] == 'energy':
+            red = round((ts.energy - color_min) / color_step)
+            green = 0
+            blue = round((color_max - ts.energy) / color_step)
             color = f'rgb({red},{green},{blue}'
-        g.add_edge(ts.reactant.name, ts.product.name, title=f'{round(ts.energy, 1)} kcal/mol', width=4)
+        else:  # black, unless specified
+            color = ts.color
+        g.add_edge(ts.reactant.name, ts.product.name, title=f'{round(ts.energy, 1)} kcal/mol', color=color, width=4)
 
     g.show_buttons(filter_=['physics'])
     g.save_graph(f'{options["id"]}.html')
@@ -1385,7 +1389,7 @@ def main(argv):
     # generate 2d depiction from the smiles or 3D structure,
     # store them in join(input_id, '_2d')
     generate_2d_depiction()
-    plot()  # plot the graph
+    #plot()  # plot the graph
     create_interactive_graph()
 # end def
 
