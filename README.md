@@ -62,6 +62,7 @@ The plotting options (to be written in the input file) are:
 | axes_size | 10 | font size of the axes |
 | text_size | 10 | font size of the energy values on the graph |
 | linear_lines | 0 | plot polynomials (0) or linear lines (1) between de stationary points |
+| graph_edge_color | None | color of graph edge, if set to 'energy', will be scaled accordingly
 
 Optionally a folder xyz/ containing the xyz coordinates of the stationary points ($name.xyz)
 (for bimolecular products, use several xyz coordinates files ($name$index.xyz) )
