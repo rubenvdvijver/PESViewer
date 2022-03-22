@@ -1389,7 +1389,7 @@ def main(argv):
     # generate 2d depiction from the smiles or 3D structure,
     # store them in join(input_id, '_2d')
     generate_2d_depiction()
-    #plot()  # plot the graph
+    plot()  # plot the graph
     create_interactive_graph()
 # end def
 
