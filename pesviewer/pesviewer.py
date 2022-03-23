@@ -1321,33 +1321,39 @@ def create_interactive_graph():
         return
 
     g = net.Network(height='800px', width='50%',heading='')
+    base_energy = 0.
+    for well in wells:
+        if well.name == options['rescale']:
+            base_energy = well.energy
+    for bim in bimolecs:
+        if bim.name == options['rescale']:
+            base_energy = bim.energy
     for i, well in enumerate(wells):
-        g.add_node(well.name, label=str(round(well.energy, 1)), borderWidth=3, title=f'{well.name}',
+        g.add_node(well.name, label=str(round(well.energy - base_energy, 1)), borderWidth=3, title=f'{well.name}',
                    shape='image', image=f'{options["id"]}_2d/{well.name}_2d.png')
     for i, bim in enumerate(bimolecs):
-        g.add_node(bim.name, label=str(round(bim.energy,1)), borderWidth=3, title=f'{bim.name}',
+        g.add_node(bim.name, label=str(round(bim.energy - base_energy,1)), borderWidth=3, title=f'{bim.name}',
                    shape='image', image=f'{options["id"]}_2d/{bim.name}_2d.png')
     for i, bles in enumerate(barrierlesss):
-        g.add_node(bless.name, label=str(round(bless.energy,1)), borderWidth=3, title=f'{bless.name}',
+        g.add_node(bless.name, label=str(round(bless.energy - base_energy,1)), borderWidth=3, title=f'{bless.name}',
                    shape='image', image=f'{options["id"]}_2d/{bless.name}_2d.png')
 
     color_min = min([ts.energy for ts in tss])
     color_max = max([ts.energy for ts in tss])
-    color_step = (color_max - color_min) / 256.
+    color_range = color_max - color_min
+    cmap = plt.get_cmap('viridis')
 
     for ts in tss:
         if options['graph_edge_color'] == 'energy':
-            red = round((ts.energy - color_min) / color_step)
-            green = 0
-            blue = round((color_max - ts.energy) / color_step)
-            color = f'rgb({red},{green},{blue}'
-        else:  # black, unless specified
+            hue = (ts.energy - color_min) / color_range
+            red, green, blue = np.array(cmap.colors[int(hue * 255)]) * 255 
+            color = f'rgb({red},{green},{blue})'
+        else:  
             color = ts.color
-        g.add_edge(ts.reactant.name, ts.product.name, title=f'{round(ts.energy, 1)} kcal/mol', color=color, width=4)
+        g.add_edge(ts.reactant.name, ts.product.name, title=f'{round(ts.energy - base_energy, 1)} kcal/mol', color=color, width=hue*20)
 
     g.show_buttons(filter_=['physics'])
     g.save_graph(f'{options["id"]}.html')
-    #display(HTML('example.html'))
     return 0
 
 
