@@ -1344,13 +1344,13 @@ def create_interactive_graph():
     cmap = plt.get_cmap('viridis')
 
     for ts in tss:
+        hue = (ts.energy - color_min) / color_range
         if options['graph_edge_color'] == 'energy':
-            hue = (ts.energy - color_min) / color_range
             red, green, blue = np.array(cmap.colors[int(hue * 255)]) * 255 
             color = f'rgb({red},{green},{blue})'
         else:  
             color = ts.color
-        g.add_edge(ts.reactant.name, ts.product.name, title=f'{round(ts.energy - base_energy, 1)} kcal/mol', color=color, width=hue*20)
+        g.add_edge(ts.reactant.name, ts.product.name, title=f'{round(ts.energy - base_energy, 1)} kcal/mol', color=color, width=(1-hue)*20+1)
 
     g.show_buttons(filter_=['physics'])
     g.save_graph(f'{options["id"]}.html')
