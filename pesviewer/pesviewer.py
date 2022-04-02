@@ -428,7 +428,9 @@ def read_input(fname):
     # image interpolation
     options['interpolation'] = 'hanning'
     # graphs edge color, if set to 'energy', will be colored by that
-    options['graph_edge_color'] = None
+    options['graph_edge_color'] = 'black'
+    # show the plot
+    options['plot'] = 1
 
     if 'options' in inputs:
         for line in inputs['options']:
@@ -473,6 +475,8 @@ def read_input(fname):
                 options['linear_lines'] = int(line.split()[1])
             elif line.startswith('graph_edge_color'):
                 options['graph_edge_color'] = str(line.split()[1])
+            elif line.startswith('plot'):
+                options['plot'] = int(line.split()[1])
             elif line.startswith('#'):
                 # comment line, don't do anything
                 continue
@@ -520,6 +524,8 @@ def read_input(fname):
         energy = eval(t[1])
         names = [t[2], t[3]]
         col = 'black'
+        if options['graph_edge_color'] != 'energy':
+            col = options['graph_edge_color']
         if len(t) > 4:
             col = t[4]
         t = ts(name, names, energy, col=col)
@@ -1011,7 +1017,7 @@ def generate_2d_depiction():
                             dx = int(dx)
                         if not isinstance(dy, int):
                             dy = int(dy)
-                        Draw.MolToFile(mol, png, size=(dx, dy), kekulize=False)
+                        Draw.MolToFile(mol, png, size=(dx, dy), imageType='svg', kekulize=True)
                     except NameError:
                         print('Could not generate 2d for {n}'.format(n=m.name))
                         return
@@ -1320,7 +1326,7 @@ def create_interactive_graph():
         print('IPython cannot be imported, no interactive plot is made.')
         return
 
-    g = net.Network(height='800px', width='50%',heading='')
+    g = net.Network(height='1600px', width='90%',heading='')
     base_energy = 0.
     for well in wells:
         if well.name == options['rescale']:
@@ -1395,7 +1401,8 @@ def main(argv):
     # generate 2d depiction from the smiles or 3D structure,
     # store them in join(input_id, '_2d')
     generate_2d_depiction()
-    plot()  # plot the graph
+    if options['plot']:
+        plot()  # plot the graph
     create_interactive_graph()
 # end def
 
