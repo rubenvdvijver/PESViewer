@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 This code reads in an input files containing the wells,
 bimolecular products, transition states and
@@ -995,85 +996,84 @@ def generate_2d_depiction():
             if len(smis) > 0:
                 smi = '.'.join(smis)
                 try:
-                    options['rdkit4depict'] = 0
-                    obmol = pybel.readstring("smi", smi)
-                    obmol.draw(show=False, filename=png)
+                    mol = Chem.MolFromSmiles(smi)
+                    Chem.Kekulize(mol) # New
+                    AllChem.Compute2DCoords(mol)
+                    cc = mol.GetConformer()
+                    xx = []
+                    yy = []
+                    for i in range(cc.GetNumAtoms()):
+                        pos = cc.GetAtomPosition(i)
+                        xx.append(pos.x)
+                        yy.append(pos.y)
+                    sc = 50
+                    dx = (max(xx)-min(xx))*sc+30
+                    dy = (max(yy)-min(yy))*sc+30
+                    if not isinstance(dx, int):
+                        dx = int(dx)
+                    if not isinstance(dy, int):
+                        dy = int(dy)
+                    img = Draw.MolToImage(mol, size=(dx, dy), kekulize=True)
+                    img.save(png)
                 except NameError:
                     try:
-                        mol = Chem.MolFromSmiles(smi)
-                        AllChem.Compute2DCoords(mol)
-                        cc = mol.GetConformer()
-                        xx = []
-                        yy = []
-                        for i in range(cc.GetNumAtoms()):
-                            pos = cc.GetAtomPosition(i)
-                            xx.append(pos.x)
-                            yy.append(pos.y)
-                        # end for
-                        sc = 50
-                        dx = (max(xx)-min(xx))*sc+30
-                        dy = (max(yy)-min(yy))*sc+30
-                        if not isinstance(dx, int):
-                            dx = int(dx)
-                        if not isinstance(dy, int):
-                            dy = int(dy)
-                        Draw.MolToFile(mol, png, size=(dx, dy), imageType='svg', kekulize=True)
+                        options['rdkit4depict'] = 0
+                        obmol = pybel.readstring("smi", smi)
+                        obmol.draw(show=False, filename=png)
                     except NameError:
                         print('Could not generate 2d for {n}'.format(n=m.name))
                         return
-                    # end try
-                # end try
 
-                im = Image.open(png)
-                im.load()
-                ix_low = im.getbbox()[0]
-                ix_high = im.getbbox()[2]
-                iy_low = im.getbbox()[1]
-                iy_high = im.getbbox()[3]
-
-                ar = np.asarray(im)
-
-                for i, row in enumerate(ar):
-                    if not all([all([ci == 255 for ci in c]) for c in row]):
-                        if i > 10:
-                            iy_low = i-10
-                        else:
-                            iy_low = i
-                        # end if
-                        break
-                    # end if
-                # end for
-                for j, col in enumerate(ar.swapaxes(0, 1)):
-                    if not all([all([ci == 255 for ci in c]) for c in col]):
-                        if j > 10:
-                            ix_low = j-10
-                        else:
-                            ix_low = j
-                        # end if
-                        break
-                    # end if
-                # end for
-                for k, revrow in reversed(list(enumerate(ar))):
-                    if not all([all([ci == 255 for ci in c]) for c in revrow]):
-                        if k < iy_high - 10:
-                            iy_high = k+10
-                        else:
-                            iy_high = k
-                        # end if
-                        break
-                    # end if
-                # end for
-                for l, revcol in reversed(list(enumerate(ar.swapaxes(0, 1)))):
-                    if not all([all([ci == 255 for ci in c]) for c in revcol]):
-                        if k < ix_high - 10:
-                            ix_high = l+10
-                        else:
-                            ix_high = l
-                        # end if
-                        break
-                    # end if
-                # end for
-                im.crop((ix_low, iy_low, ix_high, iy_high)).save(png)
+#                 im = Image.open(png)
+#                 im.load()
+#                 ix_low = im.getbbox()[0]
+#                 ix_high = im.getbbox()[2]
+#                 iy_low = im.getbbox()[1]
+#                 iy_high = im.getbbox()[3]
+# 
+#                 ar = np.asarray(im)
+# 
+#                 for i, row in enumerate(ar):
+#                     if not all([all([ci == 255 for ci in c]) for c in row]):
+#                         if i > 10:
+#                             iy_low = i-10
+#                         else:
+#                             iy_low = i
+#                         # end if
+#                         break
+#                     # end if
+#                 # end for
+#                 for j, col in enumerate(ar.swapaxes(0, 1)):
+#                     if not all([all([ci == 255 for ci in c]) for c in col]):
+#                         if j > 10:
+#                             ix_low = j-10
+#                         else:
+#                             ix_low = j
+#                         # end if
+#                         break
+#                     # end if
+#                 # end for
+#                 for k, revrow in reversed(list(enumerate(ar))):
+#                     if not all([all([ci == 255 for ci in c]) for c in revrow]):
+#                         if k < iy_high - 10:
+#                             iy_high = k+10
+#                         else:
+#                             iy_high = k
+#                         # end if
+#                         break
+#                     # end if
+#                 # end for
+#                 for l, revcol in reversed(list(enumerate(ar.swapaxes(0, 1)))):
+#                     if not all([all([ci == 255 for ci in c]) for c in revcol]):
+#                         if k < ix_high - 10:
+#                             ix_high = l+10
+#                         else:
+#                             ix_high = l
+#                         # end if
+#                         break
+#                     # end if
+#                 # end for
+#                 im.crop((ix_low, iy_low, ix_high, iy_high)).save(png)
             else:
                 # (TODO) add warning messages
                 print('Could not generate 2d for {name}'.format(name=m.name))
