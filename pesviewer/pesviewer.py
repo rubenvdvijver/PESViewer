@@ -11,7 +11,6 @@ import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pylab as plt
 import matplotlib.image as mpimg
-from PIL import Image
 import numpy as np
 import numpy.linalg as la
 import math
@@ -940,7 +939,7 @@ def generate_2d_depiction():
                     # python2: obmol = pybel.readfile('xyz', f).next()
                     # python3: obmol = pybel.readfile('xyz', f).__next__()
                     obmol = [mol for mol in pybel.readfile('xyz', f)][-1]
-                    smis.append(obmol.write("smi").split()[0])
+                    smis.append(obmol.write("smi").split()[0].replace('=[CH]=C', '=C[C]'))
                 except NameError:
                     print('Could not generate smiles for {n}'.format(n=m.name))
                 # end try
@@ -990,6 +989,7 @@ def generate_2d_depiction():
 
 
     def generate_2d(m, smis):
+        from PIL import Image
         # name and path of png file
         png = '{id}_2d/{name}_2d.png'.format(id=options['id'], name=m.name)
         if not os.path.exists(png):
@@ -997,24 +997,15 @@ def generate_2d_depiction():
                 smi = '.'.join(smis)
                 try:
                     mol = Chem.MolFromSmiles(smi)
-                    Chem.Kekulize(mol) # New
+                    Chem.Kekulize(mol)
                     AllChem.Compute2DCoords(mol)
-                    cc = mol.GetConformer()
-                    xx = []
-                    yy = []
-                    for i in range(cc.GetNumAtoms()):
-                        pos = cc.GetAtomPosition(i)
-                        xx.append(pos.x)
-                        yy.append(pos.y)
-                    sc = 50
-                    dx = (max(xx)-min(xx))*sc+30
-                    dy = (max(yy)-min(yy))*sc+30
-                    if not isinstance(dx, int):
-                        dx = int(dx)
-                    if not isinstance(dy, int):
-                        dy = int(dy)
-                    img = Draw.MolToImage(mol, size=(dx, dy), kekulize=True)
-                    img.save(png)
+                    opts = Draw.rdMolDraw2D.MolDraw2DSVG(1, 1).drawOptions()
+                    opts.bondLineWidth = 2
+                    opts.minFontSize = 20
+                    opts.maxFontSize = 20
+                    img = Draw.MolToImage(mol, kekulize=True, wedgeBonds=False,
+                                          options=opts, size=(100, 100))
+                    # img.save(png)
                 except NameError:
                     try:
                         options['rdkit4depict'] = 0
@@ -1024,56 +1015,11 @@ def generate_2d_depiction():
                         print('Could not generate 2d for {n}'.format(n=m.name))
                         return
 
-#                 im = Image.open(png)
-#                 im.load()
-#                 ix_low = im.getbbox()[0]
-#                 ix_high = im.getbbox()[2]
-#                 iy_low = im.getbbox()[1]
-#                 iy_high = im.getbbox()[3]
-# 
-#                 ar = np.asarray(im)
-# 
-#                 for i, row in enumerate(ar):
-#                     if not all([all([ci == 255 for ci in c]) for c in row]):
-#                         if i > 10:
-#                             iy_low = i-10
-#                         else:
-#                             iy_low = i
-#                         # end if
-#                         break
-#                     # end if
-#                 # end for
-#                 for j, col in enumerate(ar.swapaxes(0, 1)):
-#                     if not all([all([ci == 255 for ci in c]) for c in col]):
-#                         if j > 10:
-#                             ix_low = j-10
-#                         else:
-#                             ix_low = j
-#                         # end if
-#                         break
-#                     # end if
-#                 # end for
-#                 for k, revrow in reversed(list(enumerate(ar))):
-#                     if not all([all([ci == 255 for ci in c]) for c in revrow]):
-#                         if k < iy_high - 10:
-#                             iy_high = k+10
-#                         else:
-#                             iy_high = k
-#                         # end if
-#                         break
-#                     # end if
-#                 # end for
-#                 for l, revcol in reversed(list(enumerate(ar.swapaxes(0, 1)))):
-#                     if not all([all([ci == 255 for ci in c]) for c in revcol]):
-#                         if k < ix_high - 10:
-#                             ix_high = l+10
-#                         else:
-#                             ix_high = l
-#                         # end if
-#                         break
-#                     # end if
-#                 # end for
-#                 im.crop((ix_low, iy_low, ix_high, iy_high)).save(png)
+                new_size = (120, 120)
+                im_new = Image.new("RGB", new_size, 'white')
+                im_new.paste(img, ((new_size[0] - img.size[0]) // 2,
+                             (new_size[1] - img.size[1]) // 2))
+                im_new.save(png)
             else:
                 # (TODO) add warning messages
                 print('Could not generate 2d for {name}'.format(name=m.name))
@@ -1326,7 +1272,7 @@ def create_interactive_graph():
         print('IPython cannot be imported, no interactive plot is made.')
         return
 
-    g = net.Network(height='1600px', width='90%',heading='')
+    g = net.Network(height='1000px', width='90%', heading='')
     base_energy = 0.
     for well in wells:
         if well.name == options['rescale']:
@@ -1336,13 +1282,13 @@ def create_interactive_graph():
             base_energy = bim.energy
     for i, well in enumerate(wells):
         g.add_node(well.name, label=str(round(well.energy - base_energy, 1)), borderWidth=3, title=f'{well.name}',
-                   shape='image', image=f'{options["id"]}_2d/{well.name}_2d.png')
+                   shape='circularImage', image=f'{options["id"]}_2d/{well.name}_2d.png', size=80)
     for i, bim in enumerate(bimolecs):
-        g.add_node(bim.name, label=str(round(bim.energy - base_energy,1)), borderWidth=3, title=f'{bim.name}',
-                   shape='image', image=f'{options["id"]}_2d/{bim.name}_2d.png')
-    for i, bles in enumerate(barrierlesss):
-        g.add_node(bless.name, label=str(round(bless.energy - base_energy,1)), borderWidth=3, title=f'{bless.name}',
-                   shape='image', image=f'{options["id"]}_2d/{bless.name}_2d.png')
+        g.add_node(bim.name, label=str(round(bim.energy - base_energy, 1)), borderWidth=3, title=f'{bim.name}',
+                   shape='circularImage', image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80)
+    for i, bless in enumerate(barrierlesss):
+        g.add_node(bless.name, label=str(round(bless.energy - base_energy, 1)), borderWidth=3, title=f'{bless.name}',
+                   shape='circularImage', image=f'{options["id"]}_2d/{bless.name}_2d.png', size=80)
 
     color_min = min([ts.energy for ts in tss])
     color_max = max([ts.energy for ts in tss])
