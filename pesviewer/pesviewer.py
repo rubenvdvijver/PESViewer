@@ -25,10 +25,6 @@ except ImportError:
 
 # try import pybel
 try:
-    import pybel
-except ImportError:
-    pass
-try:
     from openbabel import pybel
 except ImportError:
     pass
@@ -1001,21 +997,22 @@ def generate_2d_depiction():
                     AllChem.Compute2DCoords(mol)
                     opts = Draw.rdMolDraw2D.MolDraw2DSVG(1, 1).drawOptions()
                     opts.bondLineWidth = 2
-                    opts.minFontSize = 20
-                    opts.maxFontSize = 20
+                    opts.minFontSize = 50
+                    opts.maxFontSize = 40
                     img = Draw.MolToImage(mol, kekulize=True, wedgeBonds=False,
-                                          options=opts, size=(100, 100))
+                                          options=opts, size=(200, 200))
+                    new_size = (240, 240)
                     # img.save(png)
                 except NameError:
                     try:
                         options['rdkit4depict'] = 0
                         obmol = pybel.readstring("smi", smi)
                         obmol.draw(show=False, filename=png)
+                        img = Image.open(png)
+                        new_size = (280, 280)
                     except NameError:
                         print('Could not generate 2d for {n}'.format(n=m.name))
                         return
-
-                new_size = (120, 120)
                 im_new = Image.new("RGB", new_size, 'white')
                 im_new.paste(img, ((new_size[0] - img.size[0]) // 2,
                              (new_size[1] - img.size[1]) // 2))
