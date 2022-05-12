@@ -934,7 +934,7 @@ def generate_2d_depiction():
                     # weird syntax to allow python2 and python3
                     # python2: obmol = pybel.readfile('xyz', f).next()
                     # python3: obmol = pybel.readfile('xyz', f).__next__()
-                    obmol = [mol for mol in pybel.readfile('xyz', f)][-1]
+                    obmol = list(pybel.readfile('xyz', f))[-1]
                     smis.append(obmol.write("smi").split()[0].replace('=[CH]=C', '=C[C]'))
                 except NameError:
                     print('Could not generate smiles for {n}'.format(n=m.name))
@@ -944,8 +944,7 @@ def generate_2d_depiction():
     # end def
 
     def reaction_smi():
-        """
-        Given a list of transition states and barrierless channels
+        """Given a list of transition states and barrierless channels
         write a reaction_smi.out file that contains the reactions as, e.g.:
         OOC[CH2] = [OH] + O1CC1i  0.0  10.72  -16.11
         The three numbers are the energy of the reactant, transition state and product.
@@ -982,7 +981,6 @@ def generate_2d_depiction():
                     f.write(p)
                 f.write('  {:.2f}  {:.2f}  {:.2f}'.format(b.reactant.energy, max(b.reactant.energy, b.product.energy), b.product.energy))
                 f.write('\n')
-
 
     def generate_2d(m, smis):
         from PIL import Image
@@ -1021,8 +1019,7 @@ def generate_2d_depiction():
                 # (TODO) add warning messages
                 print('Could not generate 2d for {name}'.format(name=m.name))
                 return
-            # end if
-        # end if
+
     # end def
     # make the directory with the 2d depictions, if not yet available
     dir = options['id'] + '_2d'
