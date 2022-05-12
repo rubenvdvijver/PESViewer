@@ -923,6 +923,13 @@ def generate_2d_depiction():
     This is only done for the wells and bimolecular products,
     2D of tss need to be supplied by the user
     """
+    try:
+        from rdkit.Chem import Draw, AllChem
+        from rdkit.Chem.Draw.cairoCanvas import Canvas
+        from pesviewer.gen_resonant_structs import gen_reso_structs
+    except ImportError:
+        pass
+
     def get_smis(m, smis, files):
         # name and path of png file
         if len(smis) > 0:
@@ -984,40 +991,67 @@ def generate_2d_depiction():
 
     def generate_2d(m, smis):
         from PIL import Image
-        # name and path of png file
-        png = '{id}_2d/{name}_2d.png'.format(id=options['id'], name=m.name)
-        if not os.path.exists(png):
-            if len(smis) > 0:
-                smi = '.'.join(smis)
-                try:
-                    mol = Chem.MolFromSmiles(smi)
-                    Chem.Kekulize(mol)
-                    AllChem.Compute2DCoords(mol)
-                    opts = Draw.rdMolDraw2D.MolDraw2DSVG(1, 1).drawOptions()
-                    opts.bondLineWidth = 2
-                    opts.minFontSize = 50
-                    opts.maxFontSize = 40
-                    img = Draw.MolToImage(mol, kekulize=True, wedgeBonds=False,
-                                          options=opts, size=(200, 200))
-                    new_size = (240, 240)
-                    # img.save(png)
-                except NameError:
-                    try:
-                        options['rdkit4depict'] = 0
-                        obmol = pybel.readstring("smi", smi)
-                        obmol.draw(show=False, filename=png)
-                        img = Image.open(png)
-                        new_size = (280, 280)
-                    except NameError:
-                        print('Could not generate 2d for {n}'.format(n=m.name))
-                        return
+        png_filename = '{id}_2d/{name}_2d.png'
+        if len(smis) == 0:
+            print('Could not generate 2d for {name}'.format(name=m.name))
+            return
+        smi = '.'.join(smis)
+        try:
+            reson_mols = gen_reso_structs(smi, min_rads=True)
+            resol = 5
+            size = (100 * resol,) * 2
+
+            # New method
+            # opts = Draw.rdMolDraw2D.MolDrawOptions()  # New way
+            # opts.minFontSize = 30 * resol
+            # opts.maxFontSize = 9 * resol
+            # opts.bondLineWidth = 1 * resol
+            # opts.padding = 0.15
+            # opts.noAtomLabels = True
+
+            # Old method (cannot use Draw.MolToImage or Draw.MolToFile):
+            opts = Draw.DrawingOptions()
+            opts.dotsPerAngstrom = 12 * resol
+            opts.atomLabelFontSize = 8 * resol
+            opts.bondLineWidth = 1 * resol
+            for i, mol in enumerate(reson_mols):
+                AllChem.Compute2DCoords(mol)
+
+                # New method
+                # img = Draw.MolToImage(mol, kekulize=False, wedgeBonds=False,
+                #                       options=opts, size=size)
+
+                # Old method (cannot use Draw.MolToImage or Draw.MolToFile):
+                img = Image.new("RGBA", size)
+                canvas = Canvas(img)
+                drawer = Draw.MolDrawing(canvas=canvas, drawingOptions=opts)
+                drawer.AddMol(mol)
+                canvas.flush()
+
+                name = m.name + f'_{i}'
+                new_size = (100 * resol,) * 2
+                # img.save(png_filename.format(id=options['id'], name=name))
                 im_new = Image.new("RGB", new_size, 'white')
                 im_new.paste(img, ((new_size[0] - img.size[0]) // 2,
-                             (new_size[1] - img.size[1]) // 2))
-                im_new.save(png)
-            else:
-                # (TODO) add warning messages
-                print('Could not generate 2d for {name}'.format(name=m.name))
+                                   (new_size[1] - img.size[1]) // 2))
+                im_new.save(png_filename.format(id=options['id'], name=name))
+                if i == 0:
+                    im_new.save(png_filename.format(id=options['id'], name=m.name))
+        except NameError:
+            try:
+                options['rdkit4depict'] = 0
+                obmol = pybel.readstring("smi", smi)
+                obmol.draw(show=False, filename=png_filename.format(id=options['id'],
+                                                                    name=m.name))
+                img = Image.open(png_filename.format(id=options['id'],
+                                                     name=m.name))
+                new_size = (280, 280)
+                im_new = Image.new("RGB", new_size, 'white')
+                im_new.paste(img, ((new_size[0] - img.size[0]) // 2,
+                                   (new_size[1] - img.size[1]) // 2))
+                im_new.save(png_filename.format(id=options['id'], name=m.name))
+            except NameError:
+                print('Could not generate 2d for {n}'.format(n=m.name))
                 return
 
     # end def
