@@ -66,7 +66,9 @@ def filter_valid_structs(mol: rdkit.Chem.Mol, combs: list, hvy_bond_ids: list) -
             else:
                 n_rad_elecs = 0
             a.SetNumRadicalElectrons(n_rad_elecs)
-        valid_mols.append(new_mol)
+        if not any([Chem.MolToSmiles(new_mol) == Chem.MolToSmiles(vmol)
+                    for vmol in valid_mols]):
+            valid_mols.append(new_mol)
     return valid_mols
 
 
