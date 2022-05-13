@@ -991,7 +991,7 @@ def generate_2d_depiction():
 
     def generate_2d(m, smis):
         from PIL import Image
-        png_filename = '{id}_2d/{name}_2d.png'
+        png_filename = '{id}_2d/{name}_2d{confid}.png'
         if len(smis) == 0:
             print('Could not generate 2d for {name}'.format(name=m.name))
             return
@@ -1036,7 +1036,11 @@ def generate_2d_depiction():
                                    (new_size[1] - img.size[1]) // 2))
                 im_new.save(png_filename.format(id=options['id'], name=name))
                 if i == 0:
-                    im_new.save(png_filename.format(id=options['id'], name=m.name))
+                    img.save(png_filename.format(id=options['id'], name=m.name,
+                                                 confid=''))
+                else:
+                    img.save(png_filename.format(id=options['id'], name=m.name,
+                                                 confid=f'_{i}'))
         except NameError:
             try:
                 options['rdkit4depict'] = 0
