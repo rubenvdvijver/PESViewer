@@ -1,17 +1,17 @@
-import rdkit.Chem
+import rdkit
 from rdkit import Chem
 
 
 def num_rad_elecs(molec: rdkit.Chem.Mol) -> int:
-    """Count the total number of radical electrons in a molecule
+    """Count the total number of radical electrons in a molecule.
 
-    @param molec: RDKit.Mol object of the target molecule.
+    @param molec: rdkit Mol object of the target molecule.
     """
     return sum([a.GetNumRadicalElectrons() for a in molec.GetAtoms()])
 
 
 def gen_bond_combs(n_bonds: int, n_conns: int) -> list:
-    """Generates all possible combinations of single double and triple bonds
+    """Generates all possible combinations of single double and triple bonds.
 
     @param n_bonds: Number of shared pairs of electrons: A double bond counts
         as two.
@@ -34,7 +34,7 @@ def gen_bond_combs(n_bonds: int, n_conns: int) -> list:
 def filter_valid_structs(mol: rdkit.Chem.Mol, combs: list, hvy_bond_ids: list) -> list:
     """Removes all configurations exceeding the octet rule, radicals are allowed.
 
-    @param mol: RDKit.Mol object of the target molecule.
+    @param mol: rdkit Mol object of the target molecule.
     @param combs: Possible combinations of bond configuration for the molecule.
     @param hvy_bond_ids: List of bonds connecting non-H atoms (C-C, C-O, etc.)
     """
