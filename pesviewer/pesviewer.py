@@ -996,6 +996,9 @@ def generate_2d_depiction():
             print('Could not generate 2d for {name}'.format(name=m.name))
             return
         smi = '.'.join(smis)
+        if os.path.isfile(png_filename.format(id=options['id'], name=m.name,
+                                              confid='')):
+            return
         try:
             reson_mols = gen_reso_structs(smi, min_rads=True)
             resol = 5
