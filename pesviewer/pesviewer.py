@@ -1002,7 +1002,7 @@ def generate_2d_depiction():
         try:
             reson_mols = gen_reso_structs(smi, min_rads=True)
             resol = 5
-            size = (100 * resol,) * 2
+            size_x = 100 * resol
 
             # New method
             # opts = Draw.rdMolDraw2D.MolDrawOptions()  # New way
@@ -1014,30 +1014,34 @@ def generate_2d_depiction():
 
             # Old method (cannot use Draw.MolToImage or Draw.MolToFile):
             opts = Draw.DrawingOptions()
-            opts.dotsPerAngstrom = 12 * resol
-            opts.atomLabelFontSize = 8 * resol
+            opts.dotsPerAngstrom = 15 * resol
+            opts.atomLabelFontSize = 9 * resol
             opts.bondLineWidth = 1 * resol
             for i, mol in enumerate(reson_mols):
                 AllChem.Compute2DCoords(mol)
-
+                cc = mol.GetConformer()
+                xx = []
+                yy = []
+                for j in range(cc.GetNumAtoms()):
+                    pos = cc.GetAtomPosition(j)
+                    xx.append(pos.x)
+                    yy.append(pos.y)
+                sc = 50
+                dx = round(max(xx) - min(xx)) * sc
+                dy = round(max(yy) - min(yy)) * sc
+                size_x = round(size_x * (1 + (max(dx, dy) - 200) / 500))
+                size = (size_x,) * 2
                 # New method
                 # img = Draw.MolToImage(mol, kekulize=False, wedgeBonds=False,
                 #                       options=opts, size=size)
 
                 # Old method (cannot use Draw.MolToImage or Draw.MolToFile):
-                img = Image.new("RGBA", size)
+                img = Image.new("RGBA", tuple(size))
                 canvas = Canvas(img)
                 drawer = Draw.MolDrawing(canvas=canvas, drawingOptions=opts)
                 drawer.AddMol(mol)
                 canvas.flush()
 
-                name = m.name + f'_{i}'
-                new_size = (100 * resol,) * 2
-                # img.save(png_filename.format(id=options['id'], name=name))
-                im_new = Image.new("RGB", new_size, 'white')
-                im_new.paste(img, ((new_size[0] - img.size[0]) // 2,
-                                   (new_size[1] - img.size[1]) // 2))
-                im_new.save(png_filename.format(id=options['id'], name=name))
                 if i == 0:
                     img.save(png_filename.format(id=options['id'], name=m.name,
                                                  confid=''))
