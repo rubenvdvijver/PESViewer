@@ -1004,7 +1004,7 @@ def generate_2d_depiction():
             resol = 5
             size_x = 100 * resol
 
-            # New method
+            # NEW METHOD
             # opts = Draw.rdMolDraw2D.MolDrawOptions()  # New way
             # opts.minFontSize = 30 * resol
             # opts.maxFontSize = 9 * resol
@@ -1012,7 +1012,7 @@ def generate_2d_depiction():
             # opts.padding = 0.15
             # opts.noAtomLabels = True
 
-            # Old method (cannot use Draw.MolToImage or Draw.MolToFile):
+            # OLD METHOD (cannot use Draw.MolToImage or Draw.MolToFile):
             opts = Draw.DrawingOptions()
             opts.dotsPerAngstrom = 15 * resol
             opts.atomLabelFontSize = 9 * resol
@@ -1031,11 +1031,11 @@ def generate_2d_depiction():
                 dy = round(max(yy) - min(yy)) * sc
                 size_x = round(size_x * (1 + (max(dx, dy) - 200) / 500))
                 size = (size_x,) * 2
-                # New method
+                # NEW METHOD
                 # img = Draw.MolToImage(mol, kekulize=False, wedgeBonds=False,
                 #                       options=opts, size=size)
 
-                # Old method (cannot use Draw.MolToImage or Draw.MolToFile):
+                # OLD METHOD (cannot use Draw.MolToImage or Draw.MolToFile):
                 img = Image.new("RGBA", tuple(size))
                 canvas = Canvas(img)
                 drawer = Draw.MolDrawing(canvas=canvas, drawingOptions=opts)
