@@ -928,10 +928,10 @@ def generate_2d_depiction():
     try:
         from rdkit.Chem import Draw, AllChem
         from rdkit.Chem.Draw.cairoCanvas import Canvas
-        from .gen_resonant_structs import gen_reso_structs
+        from gen_resonant_structs import gen_reso_structs
     except ImportError:
         print('Warning: Unable to import rdkit. Using openbabel as fallback '
-              'option.')
+              'low quality option.')
         pass
 
     def get_smis(m, smis, files):
