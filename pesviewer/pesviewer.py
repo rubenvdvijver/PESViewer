@@ -5,6 +5,8 @@ bimolecular products, transition states and
 barrierless reactions and creates a PES plot
 """
 from __future__ import print_function, division
+
+import logging
 import os
 import sys
 import matplotlib
@@ -926,8 +928,10 @@ def generate_2d_depiction():
     try:
         from rdkit.Chem import Draw, AllChem
         from rdkit.Chem.Draw.cairoCanvas import Canvas
-        from pesviewer.gen_resonant_structs import gen_reso_structs
+        from .gen_resonant_structs import gen_reso_structs
     except ImportError:
+        print('Warning: Unable to import rdkit. Using openbabel as fallback '
+              'option.')
         pass
 
     def get_smis(m, smis, files):
