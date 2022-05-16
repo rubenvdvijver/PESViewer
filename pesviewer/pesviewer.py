@@ -1053,14 +1053,17 @@ def generate_2d_depiction():
                 options['rdkit4depict'] = 0
                 obmol = pybel.readstring("smi", smi)
                 obmol.draw(show=False, filename=png_filename.format(id=options['id'],
-                                                                    name=m.name))
+                                                                    name=m.name,
+                                                                    confid=''))
                 img = Image.open(png_filename.format(id=options['id'],
-                                                     name=m.name))
+                                                     name=m.name,
+                                                     confid=''))
                 new_size = (280, 280)
                 im_new = Image.new("RGB", new_size, 'white')
                 im_new.paste(img, ((new_size[0] - img.size[0]) // 2,
                                    (new_size[1] - img.size[1]) // 2))
-                im_new.save(png_filename.format(id=options['id'], name=m.name))
+                im_new.save(png_filename.format(id=options['id'], name=m.name,
+                                                confid=''))
             except NameError:
                 print('Could not generate 2d for {n}'.format(n=m.name))
                 return
