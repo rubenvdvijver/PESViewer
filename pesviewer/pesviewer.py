@@ -1021,6 +1021,7 @@ def generate_2d_depiction():
             opts.dotsPerAngstrom = 15 * resol
             opts.atomLabelFontSize = 9 * resol
             opts.bondLineWidth = 1 * resol
+            opts.radicalSymbol = '•'
             for i, mol in enumerate(reson_mols):
                 AllChem.Compute2DCoords(mol)
                 cc = mol.GetConformer()
@@ -1332,9 +1333,6 @@ def create_interactive_graph():
     for i, bim in enumerate(bimolecs):
         g.add_node(bim.name, label=str(round(bim.energy - base_energy, 1)), borderWidth=3, title=f'{bim.name}',
                    shape='circularImage', image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80)
-    for i, bless in enumerate(barrierlesss):
-        g.add_node(bless.name, label=str(round(bless.energy - base_energy, 1)), borderWidth=3, title=f'{bless.name}',
-                   shape='circularImage', image=f'{options["id"]}_2d/{bless.name}_2d.png', size=80)
 
     color_min = min([ts.energy for ts in tss])
     color_max = max([ts.energy for ts in tss])
@@ -1349,6 +1347,19 @@ def create_interactive_graph():
         else:  
             color = ts.color
         g.add_edge(ts.reactant.name, ts.product.name, title=f'{round(ts.energy - base_energy, 1)} kcal/mol', color=color, width=(1-hue)*20+1)
+
+    for bless in barrierlesss:
+        hue = (bless.product.energy - color_min) / color_range
+        if options['graph_edge_color'] == 'energy':
+            red, green, blue = np.array(cmap.colors[int(hue * 255)]) * 255 
+            color = f'rgb({red},{green},{blue})'
+        else:  
+            color = bless.color
+        g.add_edge(bless.reactant.name, bless.product.name, title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', color=color, width=(1-hue)*20+1)
+
+
+    print(tss)
+    print(barrierlesss)
 
     g.show_buttons(filter_=['physics'])
     g.save_graph(f'{options["id"]}.html')
