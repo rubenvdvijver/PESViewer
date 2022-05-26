@@ -397,6 +397,8 @@ def read_input(fname):
     options['fh'] = 9.
     # default figure width
     options['fw'] = 18.
+    # scale factor for figures
+    options['fs'] = 1.
     # default margin on the x and y axis
     options['margin'] = 0.2
     # default dpi of the molecule figures
@@ -444,6 +446,8 @@ def read_input(fname):
                 options['fh'] = float(line.split()[1])
             elif line.startswith('fw'):
                 options['fw'] = float(line.split()[1])
+            elif line.startswith('fs'):
+                options['fs'] = float(line.split()[1])
             elif line.startswith('margin'):
                 options['margin'] = float(line.split()[1])
             elif line.startswith('dpi'):
@@ -726,13 +730,14 @@ def plot():
             extent = None
             if s.name in extsd:
                 extent = extsd[s.name]
+                print(extent)
             else:
                 if not options['rdkit4depict']:
                     options['dpi'] = 120
                 # end if
 
-                imy = len(img) + 0.
-                imx = len(img[0]) + 0.
+                imy = len(img) * options['fs']
+                imx = len(img[0]) * options['fs']
                 imw = (xhigh-xlow+0.)/(options['fw']+0.)*imx/options['dpi']
                 imh = (yhigh-ylow+0.)/(options['fh']+0.)*imy/options['dpi']
 
