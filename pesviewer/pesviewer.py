@@ -18,7 +18,7 @@ import numpy.linalg as la
 import math
 # try import RDKit
 try:
-    import rdkit.Chem as Chem
+    from rdkit import Chem
     from rdkit.Chem import Draw
     from rdkit.Chem import AllChem
 except ImportError:
@@ -730,7 +730,6 @@ def plot():
             extent = None
             if s.name in extsd:
                 extent = extsd[s.name]
-                print(extent)
             else:
                 if not options['rdkit4depict']:
                     options['dpi'] = 120
@@ -951,7 +950,12 @@ def generate_2d_depiction():
                     # python2: obmol = pybel.readfile('xyz', f).next()
                     # python3: obmol = pybel.readfile('xyz', f).__next__()
                     obmol = list(pybel.readfile('xyz', f))[-1]
-                    smis.append(obmol.write("smi").split()[0].replace('=[CH]=C', '=C[C]'))
+                    smi = obmol.write("smi").split()[0]
+                    smi = smi.replace('=[CH]=C', '=C[C]')
+                    smi = smi.replace('N(=O)=O', 'N(=O)[O]')
+                    smi = smi.replace('[NH]([CH2])(O)[O]',
+                                      '[NH+]([CH2])(O)[O-]')
+                    smis.append(smi)
                 except NameError:
                     print('Could not generate smiles for {n}'.format(n=m.name))
                 # end try
@@ -1058,7 +1062,7 @@ def generate_2d_depiction():
                 else:
                     img.save(png_filename.format(id=options['id'], name=m.name,
                                                  confid=f'_{i}'))
-        except NameError:
+        except (NameError, RuntimeError) as e:
             try:
                 options['rdkit4depict'] = 0
                 obmol = pybel.readstring("smi", smi)
@@ -1361,10 +1365,6 @@ def create_interactive_graph():
         else:  
             color = bless.color
         g.add_edge(bless.reactant.name, bless.product.name, title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', color=color, width=(1-hue)*20+1)
-
-
-    print(tss)
-    print(barrierlesss)
 
     g.show_buttons(filter_=['physics'])
     g.save_graph(f'{options["id"]}.html')
