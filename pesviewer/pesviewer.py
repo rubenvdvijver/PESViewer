@@ -18,7 +18,7 @@ import numpy.linalg as la
 import math
 # try import RDKit
 try:
-    import rdkit.Chem as Chem
+    from rdkit import Chem
     from rdkit.Chem import Draw
     from rdkit.Chem import AllChem
 except ImportError:
@@ -397,6 +397,8 @@ def read_input(fname):
     options['fh'] = 9.
     # default figure width
     options['fw'] = 18.
+    # scale factor for figures
+    options['fs'] = 1.
     # default margin on the x and y axis
     options['margin'] = 0.2
     # default dpi of the molecule figures
@@ -444,6 +446,8 @@ def read_input(fname):
                 options['fh'] = float(line.split()[1])
             elif line.startswith('fw'):
                 options['fw'] = float(line.split()[1])
+            elif line.startswith('fs'):
+                options['fs'] = float(line.split()[1])
             elif line.startswith('margin'):
                 options['margin'] = float(line.split()[1])
             elif line.startswith('dpi'):
@@ -731,8 +735,8 @@ def plot():
                     options['dpi'] = 120
                 # end if
 
-                imy = len(img) + 0.
-                imx = len(img[0]) + 0.
+                imy = len(img) * options['fs']
+                imx = len(img[0]) * options['fs']
                 imw = (xhigh-xlow+0.)/(options['fw']+0.)*imx/options['dpi']
                 imh = (yhigh-ylow+0.)/(options['fh']+0.)*imy/options['dpi']
 
@@ -946,7 +950,12 @@ def generate_2d_depiction():
                     # python2: obmol = pybel.readfile('xyz', f).next()
                     # python3: obmol = pybel.readfile('xyz', f).__next__()
                     obmol = next(pybel.readfile('xyz', f))
-                    smis.append(obmol.write("smi").split()[0].replace('=[CH]=C', '=C[C]'))
+                    smi = obmol.write("smi").split()[0]
+                    smi = smi.replace('=[CH]=C', '=C[C]')
+                    smi = smi.replace('N(=O)=O', 'N(=O)[O]')
+                    smi = smi.replace('[NH]([CH2])(O)[O]',
+                                      '[NH+]([CH2])(O)[O-]')
+                    smis.append(smi)
                 except NameError:
                     print('Could not generate smiles for {n}'.format(n=m.name))
                 # end try
@@ -1021,6 +1030,7 @@ def generate_2d_depiction():
             opts.dotsPerAngstrom = 15 * resol
             opts.atomLabelFontSize = 9 * resol
             opts.bondLineWidth = 1 * resol
+            opts.radicalSymbol = '•'
             for i, mol in enumerate(reson_mols):
                 AllChem.Compute2DCoords(mol)
                 cc = mol.GetConformer()
@@ -1052,7 +1062,7 @@ def generate_2d_depiction():
                 else:
                     img.save(png_filename.format(id=options['id'], name=m.name,
                                                  confid=f'_{i}'))
-        except NameError:
+        except (NameError, RuntimeError) as e:
             try:
                 options['rdkit4depict'] = 0
                 obmol = pybel.readstring("smi", smi)
@@ -1357,6 +1367,15 @@ def create_interactive_graph():
         g.add_edge(ts.reactant.name, ts.product.name,
                    title=f'{round(ts.energy - base_energy, 1)} kcal/mol',
                    color=color, width=(1-hue)*20+1)
+
+    for bless in barrierlesss:
+        hue = (bless.product.energy - color_min) / color_range
+        if options['graph_edge_color'] == 'energy':
+            red, green, blue = np.array(cmap.colors[int(hue * 255)]) * 255 
+            color = f'rgb({red},{green},{blue})'
+        else:  
+            color = bless.color
+        g.add_edge(bless.reactant.name, bless.product.name, title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', color=color, width=(1-hue)*20+1)
 
     g.show_buttons(filter_=['physics'])
     g.save_graph(f'{options["id"]}.html')
