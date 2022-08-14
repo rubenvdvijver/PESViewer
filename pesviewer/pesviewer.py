@@ -730,7 +730,6 @@ def plot():
             extent = None
             if s.name in extsd:
                 extent = extsd[s.name]
-                print(extent)
             else:
                 if not options['rdkit4depict']:
                     options['dpi'] = 120
@@ -1361,10 +1360,6 @@ def create_interactive_graph():
         else:  
             color = bless.color
         g.add_edge(bless.reactant.name, bless.product.name, title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', color=color, width=(1-hue)*20+1)
-
-
-    print(tss)
-    print(barrierlesss)
 
     g.show_buttons(filter_=['physics'])
     g.save_graph(f'{options["id"]}.html')
