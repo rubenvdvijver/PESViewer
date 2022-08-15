@@ -46,7 +46,9 @@ def filter_valid_structs(mol: rdkit.Chem.Mol, combs: list, hvy_bond_ids: list) -
     logger.setLevel(RDLogger.ERROR)
     rdBase.DisableLog('rdApp.error')
 
-    atomic_valences = {'C': 4, 'N': 3, 'O': 2, 'H': 1}
+    atomic_valences = {'C': [4], 'N': [3], 'O': [2], 'H': [1], 'S': [2, 4, 6],
+                       'F': [1], 'Cl': [1, 3, 5, 7], 'Br': [1, 3, 5, 7],
+                       'I': [1, 3, 5, 7]}
     valid_mols = []
     for comb in combs:
         new_mol = deepcopy(mol)
@@ -60,11 +62,13 @@ def filter_valid_structs(mol: rdkit.Chem.Mol, combs: list, hvy_bond_ids: list) -
 
         # Correct radical centers
         for a in new_mol.GetAtoms():
-            if a.GetExplicitValence() < atomic_valences[a.GetSymbol()]:
-                n_rad_elecs = atomic_valences[a.GetSymbol()] \
-                                - a.GetExplicitValence()
-            else:
-                n_rad_elecs = 0
+            for val in atomic_valences[a.GetSymbol()]:
+                if a.GetExplicitValence() > val:
+                    continue
+                else:
+                    real_val = val
+                    break
+            n_rad_elecs = real_val - a.GetExplicitValence()
             a.SetNumRadicalElectrons(n_rad_elecs)
         if not any([Chem.MolToSmiles(new_mol) == Chem.MolToSmiles(vmol)
                     for vmol in valid_mols]):
