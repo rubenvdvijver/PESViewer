@@ -949,7 +949,7 @@ def generate_2d_depiction():
                     # weird syntax to allow python2 and python3
                     # python2: obmol = pybel.readfile('xyz', f).next()
                     # python3: obmol = pybel.readfile('xyz', f).__next__()
-                    obmol = list(pybel.readfile('xyz', f))[-1]
+                    obmol = next(pybel.readfile('xyz', f))
                     smi = obmol.write("smi").split()[0]
                     smi = smi.replace('=[CH]=C', '=C[C]')
                     smi = smi.replace('N(=O)=O', 'N(=O)[O]')
@@ -1337,11 +1337,20 @@ def create_interactive_graph():
         if bim.name == options['rescale']:
             base_energy = bim.energy
     for i, well in enumerate(wells):
-        g.add_node(well.name, label=str(round(well.energy - base_energy, 1)), borderWidth=3, title=f'{well.name}',
-                   shape='circularImage', image=f'{options["id"]}_2d/{well.name}_2d.png', size=80)
+        g.add_node(well.name, label=str(round(well.energy - base_energy, 1)),
+                   borderWidth=3, title=f'{well.name}', shape='circularImage',
+                   image=f'{options["id"]}_2d/{well.name}_2d.png', size=80,
+                   font='30')
     for i, bim in enumerate(bimolecs):
-        g.add_node(bim.name, label=str(round(bim.energy - base_energy, 1)), borderWidth=3, title=f'{bim.name}',
-                   shape='circularImage', image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80)
+        g.add_node(bim.name, label=str(round(bim.energy - base_energy, 1)),
+                   borderWidth=3, title=f'{bim.name}', shape='circularImage',
+                   image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80,
+                   font='30')
+    for i, bless in enumerate(barrierlesss):
+        g.add_node(bless.name, label=str(round(bless.energy - base_energy, 1)),
+                   borderWidth=3, title=f'{bless.name}', shape='circularImage',
+                   image=f'{options["id"]}_2d/{bless.name}_2d.png', size=80,
+                   font='30')
 
     color_min = min([ts.energy for ts in tss])
     color_max = max([ts.energy for ts in tss])
@@ -1355,7 +1364,9 @@ def create_interactive_graph():
             color = f'rgb({red},{green},{blue})'
         else:  
             color = ts.color
-        g.add_edge(ts.reactant.name, ts.product.name, title=f'{round(ts.energy - base_energy, 1)} kcal/mol', color=color, width=(1-hue)*20+1)
+        g.add_edge(ts.reactant.name, ts.product.name,
+                   title=f'{round(ts.energy - base_energy, 1)} kcal/mol',
+                   color=color, width=(1-hue)*20+1)
 
     for bless in barrierlesss:
         hue = (bless.product.energy - color_min) / color_range
