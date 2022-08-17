@@ -55,14 +55,19 @@ def filter_valid_structs(mol: rdkit.Chem.Mol, combs: list, hvy_bond_ids: list) -
         for i, bo in enumerate(comb):
             bond = new_mol.GetBondWithIdx(hvy_bond_ids[i])
             bond.SetBondType(BondType(bo))
+
+        # Don't include unphysical structures/
         try:
             Chem.SanitizeMol(new_mol, Chem.SANITIZE_ALL)
         except:  # TODO Catch exact exception if possible (which I think is not)
             continue
+        if any([a.GetExplicitValence() > max(atomic_valences[a.GetSymbol()])
+                for a in new_mol.GetAtoms()]):
+            continue
 
         # Correct radical centers
         for a in new_mol.GetAtoms():
-            for val in atomic_valences[a.GetSymbol()]:
+            for val in sorted(atomic_valences[a.GetSymbol()]):
                 if a.GetExplicitValence() > val:
                     continue
                 else:
