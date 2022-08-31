@@ -499,7 +499,7 @@ def read_input(fname):
         name = w[0]
         energy = eval(w[1])
         smi = None
-        if len(w) > 2:
+        if len(w) > 2 and w[2] != '#':
             smi = w[2]
         # end if
         w = well(name, energy, smi)
@@ -510,7 +510,7 @@ def read_input(fname):
         name = b[0]
         energy = eval(b[1])
         smi = []
-        if len(b) > 2:
+        if len(b) > 2 and b[2] != '#':
             smi = b[2:]
         b = bimolec(name, energy, smi)
         bimolecs.append(b)
@@ -560,7 +560,7 @@ def get_sd_prop(all_lines):
         inp = inp .split('>', 1)
         kw = inp[0].lower()  # keyword in lower case
         val = inp[1].strip().split('\n')  # values of the keywords
-        val = [vi.strip() for vi in val]
+        val = [vi.strip() for vi in val if not vi.startswith('#')]
         val = [vi for vi in val if vi]
         ret[kw] = val
     # end for
