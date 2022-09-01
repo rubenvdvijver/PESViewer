@@ -6,7 +6,6 @@ barrierless reactions and creates a PES plot
 """
 from __future__ import print_function, division
 
-import logging
 import os
 import sys
 import matplotlib
@@ -28,7 +27,8 @@ except ImportError:
 # try import pybel
 try:
     from openbabel import pybel
-except ImportError:
+    pybel.ob.obErrorLog.SetOutputLevel(0)
+except (ImportError, ModuleNotFoundError):
     pass
 # end try
 
@@ -933,7 +933,7 @@ def generate_2d_depiction():
         from rdkit.Chem import Draw, AllChem
         from rdkit.Chem.Draw.cairoCanvas import Canvas
         from pesviewer.gen_resonant_structs import gen_reso_structs
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         print('Warning: Unable to import rdkit. Using openbabel as fallback '
               'low quality option.')
         pass
@@ -960,7 +960,7 @@ def generate_2d_depiction():
                     print('Could not generate smiles for {n}'.format(n=m.name))
                 # end try
             # end for
-        return(smis)
+        return smis
     # end def
 
     def reaction_smi():
@@ -1062,7 +1062,7 @@ def generate_2d_depiction():
                 else:
                     img.save(png_filename.format(id=options['id'], name=m.name,
                                                  confid=f'_{i}'))
-        except (NameError, RuntimeError) as e:
+        except (NameError, RuntimeError):
             try:
                 options['rdkit4depict'] = 0
                 obmol = pybel.readstring("smi", smi)
@@ -1087,7 +1087,7 @@ def generate_2d_depiction():
     dir = options['id'] + '_2d'
     try:
         os.stat(dir)
-    except:
+    except FileNotFoundError:
         os.mkdir(dir)
     for w in wells:
         s = []
