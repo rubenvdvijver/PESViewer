@@ -1382,21 +1382,19 @@ def create_interactive_graph():
     return 0
 
 
-
-def main(argv):
+def main():
+    """Main method to run the PESViewer
     """
-    Main method to run the PESViewer
-    """
-    if len(argv) > 1:  # read the arguments
-        fname = argv[1]
+    if len(sys.argv) > 1:  # read the arguments
+        fname = sys.argv[1]
         options['save'] = 0
         options['save_from_command_line'] = 0
-        if len(argv) > 2:
+        if len(sys.argv) > 2:
             # argument to specify whether plot needs to be saved or displayed
-            if argv[2] == 'save':
+            if sys.argv[2] == 'save':
                 options['save'] = 1
                 options['save_from_command_line'] = 1
-    elif len(argv) == 1:
+    elif len(sys.argv) == 1:
         print('To use the pesviewer, supply an input file as argument.')
         sys.exit(-1)
     # end if
@@ -1426,4 +1424,5 @@ def main(argv):
 # end def
 
 
-main(sys.argv)
+if __name__ == "__main__":
+    main()
