@@ -1337,8 +1337,9 @@ def create_interactive_graph():
         if bim.name == options['rescale']:
             base_energy = bim.energy
     for i, well in enumerate(wells):
-        g.add_node(well.name, label=str(round(well.energy - base_energy, 1)), borderWidth=3, title=f'{well.name}',
-                   shape='circularImage', image=f'{options["id"]}_2d/{well.name}_2d.png', size=80)
+        g.add_node(well.name, label=str(round(well.energy - base_energy, 1)),
+                   borderWidth=3, title=f'{well.name}', shape='circularImage',
+                   image=f'{options["id"]}_2d/{well.name}_2d.png', size=80)
     for i, bim in enumerate(bimolecs):
         g.add_node(bim.name, label=str(round(bim.energy - base_energy, 1)), borderWidth=3, title=f'{bim.name}',
                    shape='circularImage', image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80)
@@ -1369,7 +1370,6 @@ def create_interactive_graph():
     g.show_buttons(filter_=['physics'])
     g.save_graph(f'{options["id"]}.html')
     return 0
-
 
 
 def main(argv):

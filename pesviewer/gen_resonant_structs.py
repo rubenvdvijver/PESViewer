@@ -87,8 +87,8 @@ def gen_reso_structs(smi: str, min_rads=True) -> list:  # C(=C\\1/[C]C1)\\[CH2]
     hvy_bond_ids = [b.GetIdx() for b in mol.GetBonds()
                     if b.GetBeginAtom().GetSymbol() != 'H'
                     and b.GetEndAtom().GetSymbol() != 'H']
-    num_bonds = int(sum([mol.GetBondWithIdx(i).GetBondTypeAsDouble()
-                         for i in hvy_bond_ids]))
+    num_bonds = int(sum([mol.GetBondWithIdx(b).GetBondTypeAsDouble()
+                         for b in hvy_bond_ids]))
     num_conns = len(hvy_bond_ids)
     radic_elecs = num_rad_elecs(mol)
     max_bonds = num_bonds + radic_elecs // 2
