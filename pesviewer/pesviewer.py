@@ -6,7 +6,6 @@ barrierless reactions and creates a PES plot
 """
 from __future__ import print_function, division
 
-import logging
 import os
 import sys
 import matplotlib
@@ -28,7 +27,8 @@ except ImportError:
 # try import pybel
 try:
     from openbabel import pybel
-except ImportError:
+    pybel.ob.obErrorLog.SetOutputLevel(0)
+except (ImportError, ModuleNotFoundError):
     pass
 # end try
 
@@ -499,7 +499,7 @@ def read_input(fname):
         name = w[0]
         energy = eval(w[1])
         smi = None
-        if len(w) > 2:
+        if len(w) > 2 and w[2] != '#':
             smi = w[2]
         # end if
         w = well(name, energy, smi)
@@ -510,7 +510,7 @@ def read_input(fname):
         name = b[0]
         energy = eval(b[1])
         smi = []
-        if len(b) > 2:
+        if len(b) > 2 and b[2] != '#':
             smi = b[2:]
         b = bimolec(name, energy, smi)
         bimolecs.append(b)
@@ -560,7 +560,7 @@ def get_sd_prop(all_lines):
         inp = inp .split('>', 1)
         kw = inp[0].lower()  # keyword in lower case
         val = inp[1].strip().split('\n')  # values of the keywords
-        val = [vi.strip() for vi in val]
+        val = [vi.strip() for vi in val if not vi.startswith('#')]
         val = [vi for vi in val if vi]
         ret[kw] = val
     # end for
@@ -933,7 +933,7 @@ def generate_2d_depiction():
         from rdkit.Chem import Draw, AllChem
         from rdkit.Chem.Draw.cairoCanvas import Canvas
         from pesviewer.gen_resonant_structs import gen_reso_structs
-    except ImportError:
+    except (ImportError, ModuleNotFoundError):
         print('Warning: Unable to import rdkit. Using openbabel as fallback '
               'low quality option.')
         pass
@@ -949,7 +949,7 @@ def generate_2d_depiction():
                     # weird syntax to allow python2 and python3
                     # python2: obmol = pybel.readfile('xyz', f).next()
                     # python3: obmol = pybel.readfile('xyz', f).__next__()
-                    obmol = list(pybel.readfile('xyz', f))[-1]
+                    obmol = next(pybel.readfile('xyz', f))
                     smi = obmol.write("smi").split()[0]
                     smi = smi.replace('=[CH]=C', '=C[C]')
                     smi = smi.replace('N(=O)=O', 'N(=O)[O]')
@@ -960,7 +960,7 @@ def generate_2d_depiction():
                     print('Could not generate smiles for {n}'.format(n=m.name))
                 # end try
             # end for
-        return(smis)
+        return smis
     # end def
 
     def reaction_smi():
@@ -1062,7 +1062,7 @@ def generate_2d_depiction():
                 else:
                     img.save(png_filename.format(id=options['id'], name=m.name,
                                                  confid=f'_{i}'))
-        except (NameError, RuntimeError) as e:
+        except (NameError, RuntimeError):
             try:
                 options['rdkit4depict'] = 0
                 obmol = pybel.readstring("smi", smi)
@@ -1087,7 +1087,7 @@ def generate_2d_depiction():
     dir = options['id'] + '_2d'
     try:
         os.stat(dir)
-    except:
+    except FileNotFoundError:
         os.mkdir(dir)
     for w in wells:
         s = []
@@ -1339,10 +1339,18 @@ def create_interactive_graph():
     for i, well in enumerate(wells):
         g.add_node(well.name, label=str(round(well.energy - base_energy, 1)),
                    borderWidth=3, title=f'{well.name}', shape='circularImage',
-                   image=f'{options["id"]}_2d/{well.name}_2d.png', size=80)
+                   image=f'{options["id"]}_2d/{well.name}_2d.png', size=80,
+                   font='30')
     for i, bim in enumerate(bimolecs):
-        g.add_node(bim.name, label=str(round(bim.energy - base_energy, 1)), borderWidth=3, title=f'{bim.name}',
-                   shape='circularImage', image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80)
+        g.add_node(bim.name, label=str(round(bim.energy - base_energy, 1)),
+                   borderWidth=3, title=f'{bim.name}', shape='circularImage',
+                   image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80,
+                   font='30')
+    for i, bless in enumerate(barrierlesss):
+        g.add_node(bless.name, label=str(round(bless.energy - base_energy, 1)),
+                   borderWidth=3, title=f'{bless.name}', shape='circularImage',
+                   image=f'{options["id"]}_2d/{bless.name}_2d.png', size=80,
+                   font='30')
 
     color_min = min([ts.energy for ts in tss])
     color_max = max([ts.energy for ts in tss])
@@ -1356,7 +1364,9 @@ def create_interactive_graph():
             color = f'rgb({red},{green},{blue})'
         else:  
             color = ts.color
-        g.add_edge(ts.reactant.name, ts.product.name, title=f'{round(ts.energy - base_energy, 1)} kcal/mol', color=color, width=(1-hue)*20+1)
+        g.add_edge(ts.reactant.name, ts.product.name,
+                   title=f'{round(ts.energy - base_energy, 1)} kcal/mol',
+                   color=color, width=(1-hue)*20+1)
 
     for bless in barrierlesss:
         hue = (bless.product.energy - color_min) / color_range
@@ -1372,20 +1382,19 @@ def create_interactive_graph():
     return 0
 
 
-def main(argv):
+def main():
+    """Main method to run the PESViewer
     """
-    Main method to run the PESViewer
-    """
-    if len(argv) > 1:  # read the arguments
-        fname = argv[1]
+    if len(sys.argv) > 1:  # read the arguments
+        fname = sys.argv[1]
         options['save'] = 0
         options['save_from_command_line'] = 0
-        if len(argv) > 2:
+        if len(sys.argv) > 2:
             # argument to specify whether plot needs to be saved or displayed
-            if argv[2] == 'save':
+            if sys.argv[2] == 'save':
                 options['save'] = 1
                 options['save_from_command_line'] = 1
-    elif len(argv) == 1:
+    elif len(sys.argv) == 1:
         print('To use the pesviewer, supply an input file as argument.')
         sys.exit(-1)
     # end if
@@ -1415,4 +1424,5 @@ def main(argv):
 # end def
 
 
-main(sys.argv)
+if __name__ == "__main__":
+    main()
