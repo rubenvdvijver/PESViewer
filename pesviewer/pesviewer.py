@@ -1340,12 +1340,12 @@ def create_interactive_graph():
         g.add_node(well.name, label=str(round(well.energy - base_energy, 1)),
                    borderWidth=3, title=f'{well.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{well.name}_2d.png', size=80,
-                   font='30')
+                   font='30', color='black')
     for i, bim in enumerate(bimolecs):
         g.add_node(bim.name, label=str(round(bim.energy - base_energy, 1)),
                    borderWidth=3, title=f'{bim.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80,
-                   font='30')
+                   font='30', color='blue')
 
     color_min = min([ts.energy for ts in tss])
     color_max = max([ts.energy for ts in tss])
@@ -1370,7 +1370,7 @@ def create_interactive_graph():
             red, green, blue = np.array(cmap.colors[int(hue * 255)]) * 255 
             color = f'rgb({red},{green},{blue})'
         else:  
-            color = 'blue'
+            color = 'gray'
         print(bless.reactant.name, bless.product.name,(1-hue)*20+1)
         g.add_edge(bless.reactant.name, bless.product.name, 
                    title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', 
