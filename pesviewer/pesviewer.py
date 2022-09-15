@@ -1349,7 +1349,7 @@ def create_interactive_graph():
     for i, bless in enumerate(barrierlesss):
         g.add_node(bless.name, label=str(round(bless.product.energy - base_energy, 1)),
                    borderWidth=3, title=f'{bless.name}', shape='circularImage',
-                   image=f'{options["id"]}_2d/{bless.name}_2d.png', size=80,
+                   image=f'{options["id"]}_2d/{bless.product.name}_2d.png', size=80,
                    font='30')
 
     color_min = min([ts.energy for ts in tss])
@@ -1374,8 +1374,10 @@ def create_interactive_graph():
             red, green, blue = np.array(cmap.colors[int(hue * 255)]) * 255 
             color = f'rgb({red},{green},{blue})'
         else:  
-            color = bless.color
-        g.add_edge(bless.reactant.name, bless.product.name, title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', color=color, width=(1-hue)*20+1)
+            color = ts.color
+        g.add_edge(bless.reactant.name, bless.product.name, 
+                   title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', 
+                   color=color, width=(1-hue)*20+1)
 
     g.show_buttons(filter_=['physics'])
     g.save_graph(f'{options["id"]}.html')
