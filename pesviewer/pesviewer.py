@@ -1346,11 +1346,6 @@ def create_interactive_graph():
                    borderWidth=3, title=f'{bim.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80,
                    font='30')
-    for i, bless in enumerate(barrierlesss):
-        g.add_node(bless.name, label=str(round(bless.product.energy - base_energy, 1)),
-                   borderWidth=3, title=f'{bless.name}', shape='circularImage',
-                   image=f'{options["id"]}_2d/{bless.product.name}_2d.png', size=80,
-                   font='30')
 
     color_min = min([ts.energy for ts in tss])
     color_max = max([ts.energy for ts in tss])
@@ -1364,6 +1359,7 @@ def create_interactive_graph():
             color = f'rgb({red},{green},{blue})'
         else:  
             color = ts.color
+        print(ts.reactant.name, ts.product.name,(1-hue)*20+1)
         g.add_edge(ts.reactant.name, ts.product.name,
                    title=f'{round(ts.energy - base_energy, 1)} kcal/mol',
                    color=color, width=(1-hue)*20+1)
@@ -1374,7 +1370,8 @@ def create_interactive_graph():
             red, green, blue = np.array(cmap.colors[int(hue * 255)]) * 255 
             color = f'rgb({red},{green},{blue})'
         else:  
-            color = ts.color
+            color = 'blue'
+        print(bless.reactant.name, bless.product.name,(1-hue)*20+1)
         g.add_edge(bless.reactant.name, bless.product.name, 
                    title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', 
                    color=color, width=(1-hue)*20+1)
