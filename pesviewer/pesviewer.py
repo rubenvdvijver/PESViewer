@@ -804,10 +804,10 @@ def plot():
         lw = 1.5
         alpha = 1.0
         ls = 'solid'
-        if line.color == 'gray':
-            ls = 'dotted'
-        elif line.color == 'blue' or line.color == 'b':
-            ls = 'dashed'
+#        if line.color == 'gray':
+#            ls = 'dotted'
+#        elif line.color == 'blue' or line.color == 'b':
+#            ls = 'dashed'
         if line.straight_line:
             if line.xmin == line.xmax:  # plot a vertical line
                 ymin = min(line.y1, line.y2)
@@ -1347,7 +1347,7 @@ def create_interactive_graph():
                    image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80,
                    font='30')
     for i, bless in enumerate(barrierlesss):
-        g.add_node(bless.name, label=str(round(bless.energy - base_energy, 1)),
+        g.add_node(bless.name, label=str(round(bless.product.energy - base_energy, 1)),
                    borderWidth=3, title=f'{bless.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{bless.name}_2d.png', size=80,
                    font='30')
