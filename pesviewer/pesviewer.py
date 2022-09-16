@@ -21,15 +21,19 @@ try:
     from rdkit.Chem import Draw
     from rdkit.Chem import AllChem
 except ImportError:
-    pass
+    print("Could not import rdkit, the code will likely not work.")
 # end try
 
 # try import pybel
 try:
-    from openbabel import pybel
+    import pybel
     pybel.ob.obErrorLog.SetOutputLevel(0)
-except (ImportError, ModuleNotFoundError):
-    pass
+except:
+    try:
+        from openbabel import pybel
+        pybel.ob.obErrorLog.SetOutputLevel(0)
+    except (ImportError, ModuleNotFoundError):
+        print("Could not import pybel, the code will likely not work.")
 # end try
 
 # contains all the options for this PES
