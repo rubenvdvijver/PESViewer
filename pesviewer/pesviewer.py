@@ -1363,7 +1363,6 @@ def create_interactive_graph():
             color = f'rgb({red},{green},{blue})'
         else:  
             color = ts.color
-        print(ts.reactant.name, ts.product.name,(1-hue)*20+1)
         g.add_edge(ts.reactant.name, ts.product.name,
                    title=f'{round(ts.energy - base_energy, 1)} kcal/mol',
                    color=color, width=(1-hue)*20+1)
@@ -1375,7 +1374,6 @@ def create_interactive_graph():
             color = f'rgb({red},{green},{blue})'
         else:  
             color = 'gray'
-        print(bless.reactant.name, bless.product.name,(1-hue)*20+1)
         g.add_edge(bless.reactant.name, bless.product.name, 
                    title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', 
                    color=color, width=(1-hue)*20+1)
