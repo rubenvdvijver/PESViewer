@@ -942,7 +942,7 @@ def generate_2d_depiction():
         # name and path of png file
         if len(smis) > 0:
             return smis
-        elif all([os.path.exists(f) for f in files]):
+        elif files and all([os.path.exists(f) for f in files]):
             smis = []
             for f in files:
                 try:
@@ -960,6 +960,9 @@ def generate_2d_depiction():
                     print('Could not generate smiles for {n}'.format(n=m.name))
                 # end try
             # end for
+        else:
+            raise FileNotFoundError(f'No xyz file found for well {m.name} ('
+                                    f'{m.smi})')
         return smis
     # end def
 
@@ -973,13 +976,19 @@ def generate_2d_depiction():
 
         with open('reaction_smi.out', 'w') as f:
             for t in tss:
-                t.reactant.smi = get_smis(t.reactant, [], t.reactant.xyz_files)
+                if not t.reactant.smi:
+                    t.reactant.smi = get_smis(t.reactant, [], t.reactant.xyz_files)
+                elif isinstance(t.reactant.smi, str):
+                    t.reactant.smi = [t.reactant.smi]
                 f.write(t.reactant.smi[0])
                 for r in t.reactant.smi[1:]:
                     f.write(' + ')
                     f.write(r)
                 f.write(' = ')
-                t.product.smi = get_smis(t.product, [], t.product.xyz_files)
+                if not t.product.smi:
+                    t.product.smi = get_smis(t.product, [], t.product.xyz_files)
+                elif isinstance(t.product.smi, str):
+                    t.product.smi = [t.product.smi]
                 f.write(t.product.smi[0])
                 for p in t.product.smi[1:]:
                     f.write(' + ')
@@ -988,15 +997,21 @@ def generate_2d_depiction():
                 f.write('\n')
 
             for b in barrierlesss:
-                b.reactant.smi = get_smis(b.reactant, [], b.reactant.xyz_files)
+                if not b.reactant.smi:
+                    b.reactant.smi = get_smis(b.reactant, [], b.reactant.xyz_files)
+                elif isinstance(b.reactant.smi, str):
+                    b.reactant.smi = [b.reactant.smi]
                 f.write(b.reactant.smi[0])
                 for r in b.reactant.smi:
                     f.write(' + ')
                     f.write(r)
                 f.write(' = ')
-                b.product.smi = get_smis(b.product, [], b.product.xyz_files)
+                if not b.product.smi:
+                    b.product.smi = get_smis(b.product, [], b.product.xyz_files)
+                elif isinstance(b.product.smi, str):
+                    b.product.smi = [b.product.smi]
                 f.write(b.product.smi[0])
-                for p in b.product.smi:
+                for p in b.product.smi[1:]:
                     f.write(' + ')
                     f.write(p)
                 f.write('  {:.2f}  {:.2f}  {:.2f}'.format(b.reactant.energy, max(b.reactant.energy, b.product.energy), b.product.energy))
