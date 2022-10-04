@@ -21,15 +21,19 @@ try:
     from rdkit.Chem import Draw
     from rdkit.Chem import AllChem
 except ImportError:
-    pass
+    print("Could not import rdkit, the code will likely not work.")
 # end try
 
 # try import pybel
 try:
-    from openbabel import pybel
+    import pybel
     pybel.ob.obErrorLog.SetOutputLevel(0)
-except (ImportError, ModuleNotFoundError):
-    pass
+except:
+    try:
+        from openbabel import pybel
+        pybel.ob.obErrorLog.SetOutputLevel(0)
+    except (ImportError, ModuleNotFoundError):
+        print("Could not import pybel, the code will likely not work.")
 # end try
 
 # contains all the options for this PES
@@ -1374,7 +1378,6 @@ def create_interactive_graph():
             color = f'rgb({red},{green},{blue})'
         else:  
             color = ts.color
-        print(ts.reactant.name, ts.product.name,(1-hue)*20+1)
         g.add_edge(ts.reactant.name, ts.product.name,
                    title=f'{round(ts.energy - base_energy, 1)} kcal/mol',
                    color=color, width=(1-hue)*20+1)
@@ -1386,7 +1389,6 @@ def create_interactive_graph():
             color = f'rgb({red},{green},{blue})'
         else:  
             color = 'gray'
-        print(bless.reactant.name, bless.product.name,(1-hue)*20+1)
         g.add_edge(bless.reactant.name, bless.product.name, 
                    title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', 
                    color=color, width=(1-hue)*20+1)
