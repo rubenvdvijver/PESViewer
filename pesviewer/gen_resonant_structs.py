@@ -88,6 +88,8 @@ def gen_reso_structs(smi: str, min_rads=True) -> list:  # C(=C\\1/[C]C1)\\[CH2]
     @param min_rads: Whether to minimize the number of radical electrons or not.
     """
     mol = Chem.MolFromSmiles(smi)
+    if not mol:
+        raise RuntimeError(f'Unable to make rdkit mol structure for {smi}.')
     mol = Chem.AddHs(mol)
     hvy_bond_ids = [b.GetIdx() for b in mol.GetBonds()
                     if b.GetBeginAtom().GetSymbol() != 'H'
