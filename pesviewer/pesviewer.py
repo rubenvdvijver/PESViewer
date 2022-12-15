@@ -435,6 +435,8 @@ def read_input(fname):
     options['graph_edge_color'] = 'black'
     # show the plot
     options['plot'] = 1
+    # DEnable/disable generation of 2D depictions for resonant structures.
+    options['reso_2d'] = 1
 
     if 'options' in inputs:
         for line in inputs['options']:
@@ -483,6 +485,8 @@ def read_input(fname):
                 options['graph_edge_color'] = str(line.split()[1])
             elif line.startswith('plot'):
                 options['plot'] = int(line.split()[1])
+            elif line.startswith('reso_2d'):
+                options['reso_2d'] = int(line.split()[1])
             elif line.startswith('#'):
                 # comment line, don't do anything
                 continue
@@ -1028,11 +1032,14 @@ def generate_2d_depiction():
                                               confid='')):
             return
         try:
-            try:
-                reson_mols = gen_reso_structs(smi, min_rads=True)
-            except RuntimeError:
-                print(f'Warning: Unable to generate resonant structure for '
-                      f'{smi}.')
+            if options['reso_2d']:
+                try:
+                    reson_mols = gen_reso_structs(smi, min_rads=True)
+                except RuntimeError:
+                    print(f'Warning: Unable to generate resonant structure for '
+                          f'{smi}.')
+                    options['reso_2d'] = 0
+            if not options['reso_2d']:
                 mol = Chem.MolFromSmiles(smi, sanitize=False)
                 mol.UpdatePropertyCache(strict=False)
                 Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_FINDRADICALS
