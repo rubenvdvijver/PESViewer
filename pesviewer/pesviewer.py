@@ -940,7 +940,6 @@ def generate_2d_depiction():
     except (ImportError, ModuleNotFoundError):
         print('Warning: Unable to import rdkit. Using openbabel as fallback '
               'low quality option.')
-        pass
 
     def get_smis(m, smis, files):
         # name and path of png file
@@ -950,9 +949,6 @@ def generate_2d_depiction():
             smis = []
             for f in files:
                 try:
-                    # weird syntax to allow python2 and python3
-                    # python2: obmol = pybel.readfile('xyz', f).next()
-                    # python3: obmol = pybel.readfile('xyz', f).__next__()
                     obmol = next(pybel.readfile('xyz', f))
                     smi = obmol.write("smi").split()[0]
                     smi = smi.replace('=[CH]=C', '=C[C]')
@@ -1032,7 +1028,22 @@ def generate_2d_depiction():
                                               confid='')):
             return
         try:
-            reson_mols = gen_reso_structs(smi, min_rads=True)
+            try:
+                reson_mols = gen_reso_structs(smi, min_rads=True)
+            except RuntimeError:
+                print(f'Warning: Unable to generate resonant structure for '
+                      f'{smi}.')
+                mol = Chem.MolFromSmiles(smi, sanitize=False)
+                mol.UpdatePropertyCache(strict=False)
+                Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_FINDRADICALS
+                                 | Chem.SanitizeFlags.SANITIZE_KEKULIZE
+                                 | Chem.SanitizeFlags.SANITIZE_SETAROMATICITY
+                                 | Chem.SanitizeFlags.SANITIZE_SETCONJUGATION
+                                 | Chem.SanitizeFlags.SANITIZE_SETHYBRIDIZATION
+                                 | Chem.SanitizeFlags.SANITIZE_SYMMRINGS,
+                                 catchErrors=True)
+                reson_mols = [mol]
+
             resol = 5
             size_x = 100 * resol
 
@@ -1109,10 +1120,12 @@ def generate_2d_depiction():
     except FileNotFoundError:
         os.mkdir(dir)
     for w in wells:
-        s = []
+        smis = []
         if w.smi is not None:
-            s.append(w.smi)
-        generate_2d(w, get_smis(w, s, w.xyz_files))
+            smis.append(w.smi)
+        else:
+            smis = get_smis(w, smis, w.xyz_files)
+        generate_2d(w, smis)
     # end for
     for b in bimolecs:
         generate_2d(b, get_smis(b, b.smi, b.xyz_files))
@@ -1339,7 +1352,7 @@ def create_interactive_graph():
     try:
         from pyvis import network as net
     except ImportError:
-        print('pyvis cannot be imported, no interactive plot is made.')
+        print('pyvis cannot be imported, no interactive graph is made.')
         return
     try:
         from IPython.core.display import display, HTML

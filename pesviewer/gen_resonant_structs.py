@@ -46,7 +46,7 @@ def filter_valid_structs(mol: rdkit.Chem.Mol, combs: list, hvy_bond_ids: list) -
     logger.setLevel(RDLogger.ERROR)
     rdBase.DisableLog('rdApp.error')
 
-    atomic_valences = {'C': [4], 'N': [3], 'O': [2], 'H': [1], 'S': [2, 4, 6],
+    atomic_valences = {'C': [4], 'N': [3, 4, 5], 'O': [2], 'H': [1], 'S': [2, 4, 6],
                        'F': [1], 'Cl': [1, 3, 5, 7], 'Br': [1, 3, 5, 7],
                        'I': [1, 3, 5, 7]}
     valid_mols = []
@@ -58,8 +58,15 @@ def filter_valid_structs(mol: rdkit.Chem.Mol, combs: list, hvy_bond_ids: list) -
 
         # Don't include unphysical structures/
         try:
-            Chem.SanitizeMol(new_mol, Chem.SANITIZE_ALL)
-        except:  # TODO Catch exact exception if possible (which I think is not)
+            new_mol.UpdatePropertyCache(strict=False)
+            Chem.SanitizeMol(new_mol, Chem.SanitizeFlags.SANITIZE_FINDRADICALS
+                             | Chem.SanitizeFlags.SANITIZE_KEKULIZE
+                             | Chem.SanitizeFlags.SANITIZE_SETAROMATICITY
+                             | Chem.SanitizeFlags.SANITIZE_SETCONJUGATION
+                             | Chem.SanitizeFlags.SANITIZE_SETHYBRIDIZATION
+                             | Chem.SanitizeFlags.SANITIZE_SYMMRINGS,
+                             catchErrors=True)
+        except rdkit.Chem.rdchem.AtomSanitizeException:
             continue
         if any([a.GetExplicitValence() > max(atomic_valences[a.GetSymbol()])
                 for a in new_mol.GetAtoms()]):
@@ -68,12 +75,12 @@ def filter_valid_structs(mol: rdkit.Chem.Mol, combs: list, hvy_bond_ids: list) -
         # Correct radical centers
         for a in new_mol.GetAtoms():
             for val in sorted(atomic_valences[a.GetSymbol()]):
-                if a.GetExplicitValence() > val:
+                if a.GetExplicitValence() + a.GetFormalCharge() > val:
                     continue
                 else:
                     real_val = val
                     break
-            n_rad_elecs = real_val - a.GetExplicitValence()
+            n_rad_elecs = real_val - a.GetExplicitValence() - abs(a.GetFormalCharge())
             a.SetNumRadicalElectrons(n_rad_elecs)
         if not any([Chem.MolToSmiles(new_mol) == Chem.MolToSmiles(vmol)
                     for vmol in valid_mols]):
@@ -87,15 +94,23 @@ def gen_reso_structs(smi: str, min_rads=True) -> list:  # C(=C\\1/[C]C1)\\[CH2]
     @param smi: SMILES code of the given molecule
     @param min_rads: Whether to minimize the number of radical electrons or not.
     """
-    mol = Chem.MolFromSmiles(smi)
+    mol = Chem.MolFromSmiles(smi, sanitize=False)
+    mol.UpdatePropertyCache(strict=False)
+    Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_FINDRADICALS
+                     | Chem.SanitizeFlags.SANITIZE_KEKULIZE
+                     | Chem.SanitizeFlags.SANITIZE_SETAROMATICITY
+                     | Chem.SanitizeFlags.SANITIZE_SETCONJUGATION
+                     | Chem.SanitizeFlags.SANITIZE_SETHYBRIDIZATION
+                     | Chem.SanitizeFlags.SANITIZE_SYMMRINGS,
+                     catchErrors=True)
     if not mol:
         raise RuntimeError(f'Unable to make rdkit mol structure for {smi}.')
     mol = Chem.AddHs(mol)
     hvy_bond_ids = [b.GetIdx() for b in mol.GetBonds()
                     if b.GetBeginAtom().GetSymbol() != 'H'
                     and b.GetEndAtom().GetSymbol() != 'H']
-    num_bonds = int(sum([mol.GetBondWithIdx(b).GetBondTypeAsDouble()
-                         for b in hvy_bond_ids]))
+    num_bonds = int(sum([mol.GetBondWithIdx(bid).GetBondTypeAsDouble()
+                         for bid in hvy_bond_ids]))
     num_conns = len(hvy_bond_ids)
     radic_elecs = num_rad_elecs(mol)
     max_bonds = num_bonds + radic_elecs // 2
@@ -103,6 +118,9 @@ def gen_reso_structs(smi: str, min_rads=True) -> list:  # C(=C\\1/[C]C1)\\[CH2]
     for new_bonds in range(num_bonds, max_bonds + 1):
         combs = gen_bond_combs(new_bonds, num_conns)
         valid_structs += filter_valid_structs(mol, combs, hvy_bond_ids)
+
+    if not valid_structs:
+        raise RuntimeError
 
     # Remove Structures with larger number of radical electrons
     if min_rads:
@@ -112,7 +130,7 @@ def gen_reso_structs(smi: str, min_rads=True) -> list:  # C(=C\\1/[C]C1)\\[CH2]
 
     # Remove explicit Hydrogen atoms
     for s, struct in enumerate(valid_structs):
-        valid_structs[s] = Chem.RemoveHs(struct)
+        valid_structs[s] = Chem.RemoveHs(struct, sanitize=False)
 
     return valid_structs
 
