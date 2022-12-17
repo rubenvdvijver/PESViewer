@@ -437,6 +437,8 @@ def read_input(fname):
     options['plot'] = 1
     # DEnable/disable generation of 2D depictions for resonant structures.
     options['reso_2d'] = 1
+    # Change the linewidth of the traditional Pot. vs Reac. Coord. plot.
+    options['lw'] = 1.5
 
     if 'options' in inputs:
         for line in inputs['options']:
@@ -487,6 +489,8 @@ def read_input(fname):
                 options['plot'] = int(line.split()[1])
             elif line.startswith('reso_2d'):
                 options['reso_2d'] = int(line.split()[1])
+            elif line.startswith('lw'):
+                options['lw'] = float(line.split()[1])
             elif line.startswith('#'):
                 # comment line, don't do anything
                 continue
@@ -783,6 +787,7 @@ def plot():
     get_sizes()
     plt.rcParams["figure.figsize"] = [options['fw'], options['fh']]
     plt.rcParams["font.size"] = options['axes_size']
+    plt.rcParams['figure.dpi'] = options['dpi']
 
     matplotlib.rc("figure", facecolor="white")
     fig, ax = plt.subplots()
@@ -809,7 +814,7 @@ def plot():
         xlen = (len(wells) + len(bimolecs)) / (4 * (xhigh - xlow))
     
     for i, line in enumerate(lines):
-        lw = 1.5
+        lw = options['lw']
         alpha = 1.0
         ls = 'solid'
 #        if line.color == 'gray':
