@@ -1,14 +1,15 @@
 # PESViewer
 Visualize a potential energy surface
 
-## Developer: Ruben Van de Vijver, Laboratory for Chemical Technology, Ghent University
+This code was originally developed by [Ruben Van de Vijver](https://github.com/rubenvdvijver). 
+Our fork has been developed and improved on the top of the original to maintain compatibility with KinBot at integrate new features.
 
 The PESViewer is a code to depict and analyze a potential energy surface 
 characterized by wells, bimolecular products, transition states and barrierless reactions.
 Their energy is needed to plot the potential energy surface. 
 Written values of the energies and 2D plots (structural formulas) of the wells and products can be added to the figure 
 
-To run this code, you need python version 2.7, matplotlib, numpy and optionally OpenBabel or RDKit to create 2D plots
+To run this code, you need python version 3.7, matplotlib, numpy and optionally OpenBabel or RDKit to create 2D plots
 
 ## INSTALL
 
