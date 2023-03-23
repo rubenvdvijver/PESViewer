@@ -94,12 +94,14 @@ The output is a modifiable matplotlib figure, which can be displayed and arrange
 The possible modifications are:
 - modifing the x-position of a stationary point by draggning the energy value
 - modifing the position of 2D structure images by dragging the image
+
 Helper files with `.txt` extension are also generated, which, in certain cases need to be deleted to recreate the plot on subsequent runs (e.g., when changing the `fs` parameter). However, the information about the adjustmens made are stored here.
 
 This is an example of a nicely arranged traditional PES plot from our recent paper:
 
 ![image](https://user-images.githubusercontent.com/40675474/227331800-373cf4b7-5d17-4f7a-8347-06544badc5b8.png)
 
+* Martí, C., Michelsen, H. A., Najm, H. N., Zádor, J.: _Comprehensive kinetics on the C7H7 potential energy surface under combustion conditions._ J. Phys. Chem. A, **2023**, 127, 1941–1959. https://pubs.acs.org/doi/full/10.1021/acs.jpca.2c08035  
 
 **Graph representation**
 
