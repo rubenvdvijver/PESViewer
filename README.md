@@ -9,7 +9,9 @@ characterized by wells, bimolecular products, transition states and barrierless 
 Their energy is needed to plot the potential energy surface. 
 Written values of the energies and 2D plots (structural formulas) of the wells and products can be added to the figure 
 
-To run this code, you need python version 3.7, matplotlib, numpy and optionally OpenBabel or RDKit to create 2D plots
+To run this code, you need python version 3.7, matplotlib, numpy and optionally OpenBabel or RDKit to create 2D plots.
+
+While the code can be used as a standalone application, it is designed to work with KinBot, which automatically generates the input files for PESViewer.
 
 ## INSTALL
 
@@ -72,8 +74,8 @@ The plotting options (to be written in the input file) are listed here.
 
 * This column shows whether the parameter impacts the traditional (T) PES depiction, the graph (G), or both.
 
-Optionally a folder xyz/ containing the xyz coordinates of the stationary points ($name.xyz)
-(for bimolecular products, use several xyz coordinates files ($name$index.xyz) )
+The other input is a folder called `xyz/` containing the xyz coordinates of the stationary points (`name.xyz`)
+(for bimolecular products, use several xyz coordinates files, `name_index.xyz`). These 
 
 
 ## RUN
@@ -84,9 +86,20 @@ With the input file input.inp, type:
 
 ## OUTPUT
 
-The output is a modifiable matplotlib figure.
+When the code runs and the depiction of the molecules is requested, first, all depictions are generated based on the content of the `/xyz` folder. On repeated runs the depictions are reused, unless missing. 
 
-2 modifications are possible
-- modifing the x-position of a stationary point by a 'drag and drop' of the energy value
-- modifing the position of 2D structure images by a 'drag and drop' of the image
+**Traditional PES depiction** 
+
+The output is a modifiable matplotlib figure, which can be displayed and arranged manually, or saved. 
+The possible modifications are:
+- modifing the x-position of a stationary point by draggning the energy value
+- modifing the position of 2D structure images by dragging the image
+Helper files with `.txt` extension are also generated, which, in certain cases need to be deleted to recreate the plot on subsequent runs (e.g., when changing the `fs` parameter). However, the information about the adjustmens made are stored here.
+
+This is an example of a nicely arranged traditional PES plot from our recent paper:
+
+![image](https://user-images.githubusercontent.com/40675474/227331800-373cf4b7-5d17-4f7a-8347-06544badc5b8.png)
+
+
+**Graph representation**
 
