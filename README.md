@@ -109,7 +109,7 @@ Here, wells (black circles) and bimolecular products (blue circles) are shown as
 
 Our code, built on the pyvis package, generates a `html` file, which can be opened in a browser. Note the settings below the graph to help arrange the graph using intuitive physics analogies, which can also be turned off.
 
-This is a static screenshot example from the same publication. 
+This is a static screenshot example from the same publication - follow this link https://pubs.acs.org/doi/full/10.1021/acs.jpca.2c08035 for the Supporting Information to download interactive plots like this.
 
 ![image](https://user-images.githubusercontent.com/40675474/227336672-c7448207-fc3b-42c3-ad89-7da45f84e985.png)
 
