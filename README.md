@@ -39,31 +39,38 @@ For bimolecular products (again colors are optional)
     name reactant product color
 
 
-The plotting options (to be written in the input file) are:
+The plotting options (to be written in the input file) are listed here. 
 
 
-| option | default | Description |
-| ------- | ------- | ------- |
-| title | 0 | print a title (1) or not (0) |
-| units | kcal/mol | energy units |
-| use_xyz | 1 |use xyz, put 0  to switch off |
-| rescale | 0 | no rescale , put the well or bimolecular name here to rescale to that value |
-| fh | 9. | figure height |
-| fw | 18. | figure width |
-| margin | 0.2 | margin fraction on the x and y axis |
-| dpi | 120 | dpi of the molecule figures |
-| save | 0 | does the plot need to be saved (1) or displayed (0) |
-| write_ts_values | 1 | booleans tell if the ts energy values should be written |
-| write_well_values | 1 | booleans tell if the well and bimolecular energy values should be written |
-| bimol_color | red | color of the energy values for the bimolecular products |
-| well_color | blue | color of the energy values of the wells |
-| ts_color | green | color or the energy values of the ts, put to 'none' to use same color as line |
-| show_images | 1 | boolean tells whether the molecule images should be shown on the graph |
-| rdkit4depict | 1 | boolean that specifies which code to use for the 2D depiction |
-| axes_size | 10 | font size of the axes |
-| text_size | 10 | font size of the energy values on the graph |
-| linear_lines | 0 | plot polynomials (0) or linear lines (1) between de stationary points |
-| graph_edge_color | None | color of graph edge, if set to 'energy', will be scaled accordingly
+| option | default | Description | Scope* |
+| ------- | ------- | ------- | ------- |
+| `title` | 0 | print a title (1) or not (0) on the PES | T |
+| `units` | kcal/mol | energy units | TG | 
+| `use_xyz` | 1 | use xyz, put 0 to switch off | TG | 
+| `rescale` | 0 | no rescale, put the well or bimolecular name here to set that/those species as the zero of energy | TG |
+| `fh` | 9. | figure height | T | 
+| `fw` | 18. | figure width | T |
+| `fs` | 1 | scale factor for 2D depictions - they need to be deleted first to be regenerated with a new scaling | T |
+| `lw` | 1.5 | line width of potential energy lines | T |
+| `margin` | 0.2 | margin fraction on the x and y axis | T |
+| `dpi` | 120 | dpi of the molecule figures | TG |
+| `save` | 0 | does the plot need to be saved (1) or displayed (0) | T |
+| `plot` | 1 | display (1) or not (0) traditional PES | T |
+| `write_ts_values` | 1 | booleans tell if the ts energy values should be written | T |
+| `write_well_values` | 1 | booleans tell if the well and bimolecular energy values should be written | T |
+| `bimol_color` | red | color of the energy values for the bimolecular products | T |
+| `well_color` | blue | color of the energy values of the wells | T |
+| `ts_color` | green | color or the energy values of the ts, put to 'none' to use same color as line | T |
+| `show_images` | 1 | boolean tells whether the molecule images should be shown on the graph | T |
+| `rdkit4depict` | 1 | boolean that specifies which code to use for the 2D depiction | TG |
+| `axes_size` | 10 | font size of the axes | T |
+| `text_size` | 10 | font size of the energy values on the graph | T |
+| `linear_lines` | 0 | plot polynomials (0) or linear lines (1) between de stationary points | T |
+| `interpolation` | `hanning` | image interpolation method | T |
+| `graph_edge_color` | `black` | color of graph edge, if set to `energy`, color is scaled accordingly | G |
+| `reso_2D` | `1` | enable (1) or disable (2) generation of 2D depictions for resonant structures | TG |
+
+* This column shows whether the parameter impacts the traditional (T) PES depiction, the graph (G), or both.
 
 Optionally a folder xyz/ containing the xyz coordinates of the stationary points ($name.xyz)
 (for bimolecular products, use several xyz coordinates files ($name$index.xyz) )
