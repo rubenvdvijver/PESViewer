@@ -97,6 +97,8 @@ The possible modifications are:
 
 Helper files with `.txt` extension are also generated, which, in certain cases need to be deleted to recreate the plot on subsequent runs (e.g., when changing the `fs` parameter). However, the information about the adjustmens made are stored here.
 
+By selecting a stationary point, all direct neighbors and pathways are lit up, and the others are dimmed to help navigation.
+
 This is an example of a nicely arranged traditional PES plot from our recent paper:
 
 ![image](https://user-images.githubusercontent.com/40675474/227331800-373cf4b7-5d17-4f7a-8347-06544badc5b8.png)
