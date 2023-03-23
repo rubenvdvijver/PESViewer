@@ -105,9 +105,11 @@ This is an example of a nicely arranged traditional PES plot from our recent pap
 
 **Interactive graph representation**
 
-Here, wells (black circles) and bimolecular products (blue circles) are shown as nodes of a graph. Their energies are printed as well, and the name of the species can be read by hovering over their depiction. Transition states are shown as edges. Edges representing saddle points are black, barrierless reaction pathways are gray. The thickness of the edge is inversely proportional to the absolute height of the barrier, and the energy can be read when hovering over the edge. Optionally, the color of the edges can be controlled using the 
+Here, wells (black circles) and bimolecular products (blue circles) are shown as nodes of a graph. Their energies are printed as well, and the name of the species can be read by hovering over their depiction. Transition states are shown as edges. Edges representing saddle points are black (unless specified), barrierless reaction pathways are gray (unless specified). The thickness of the edge is inversely proportional to the absolute height of the barrier, and the energy can be read when hovering over the edge. Optionally, the color of the edges can be controlled using the 
 
 Our code, built on the pyvis package, generates a `html` file, which can be opened in a browser. Note the settings below the graph to help arrange the graph using intuitive physics analogies, which can also be turned off.
+
+This is a static screenshot example from the same publication. 
 
 ![image](https://user-images.githubusercontent.com/40675474/227336672-c7448207-fc3b-42c3-ad89-7da45f84e985.png)
 
