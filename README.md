@@ -26,19 +26,19 @@ A text file containing the stationary points, energies, names identifiers and op
 
 For wells, write each well on a separate line as follows (smiles are optional to depict the molecule, if no xyz's are available):
 
-    name energy smiles
+    name energy [smiles]
 
-For bimolecular products (again smiles are optional):
+For bimolecular products:
 
-    name energy smiles
+    name energy [smiles]
 
-For reactions (colors are optional, and if available the line of the reaction will be given that color):
+For reactions (color is optional, and colors the pathway):
 
-    name energy reactant product color
+    name energy reactant product [color]
 
-For bimolecular products (again colors are optional)
+For barrierless reactions:
 
-    name reactant product color
+    name reactant product [color]
 
 
 The plotting options (to be written in the input file) are listed here. 
@@ -103,5 +103,11 @@ This is an example of a nicely arranged traditional PES plot from our recent pap
 
 * Martí, C., Michelsen, H. A., Najm, H. N., Zádor, J.: _Comprehensive kinetics on the C7H7 potential energy surface under combustion conditions._ J. Phys. Chem. A, **2023**, 127, 1941–1959. https://pubs.acs.org/doi/full/10.1021/acs.jpca.2c08035  
 
-**Graph representation**
+**Interactive graph representation**
+
+Here, wells (black circles) and bimolecular products (blue circles) are shown as nodes of a graph. Their energies are printed as well, and the name of the species can be read by hovering over their depiction. Transition states are shown as edges. Edges representing saddle points are black, barrierless reaction pathways are gray. The thickness of the edge is inversely proportional to the absolute height of the barrier, and the energy can be read when hovering over the edge. Optionally, the color of the edges can be controlled using the 
+
+Our code, built on the pyvis package, generates a `html` file, which can be opened in a browser. Note the settings below the graph to help arrange the graph using intuitive physics analogies, which can also be turned off.
+
+![image](https://user-images.githubusercontent.com/40675474/227336672-c7448207-fc3b-42c3-ad89-7da45f84e985.png)
 
