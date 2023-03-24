@@ -1529,6 +1529,24 @@ def write_section(f, input_lines, stopsign, start, path):
         else:
             return ll+start
 
+
+def gen_graph():
+    """Generate a networkx graph object to work with"""
+    import networkx as nx
+    graph = nx.Graph()
+    min_names = [species.name for species in wells + bimolecs]
+    base_energy = next(species.energy for species in wells + bimolecs 
+                       if species.name == options['rescale'])
+    
+    for reac in tss + barrierlesss:
+        rname = reac.reactant.name
+        pname = reac.product.name
+        graph.add_edge(rname, pname)
+        graph[rname, pname]['energy'] = round(reac.energy - base_energy, 1)
+
+    return graph
+
+
 def main():
     """Main method to run the PESViewer
     """
