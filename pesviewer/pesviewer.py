@@ -1420,7 +1420,8 @@ def create_interactive_graph():
             color = ts.color
         g.add_edge(ts.reactant.name, ts.product.name,
                    title=f'{round(ts.energy - base_energy, 1)} kcal/mol',
-                   color=color, width=(1-hue)*20+1)
+                   color={"highlight": "#FF00FF", 'color': color}, 
+                   width=(1-hue)*20+1)
         rr = min_names.index(ts.reactant.name)
         pp = min_names.index(ts.product.name)
         gnx.add_edge(rr, pp)
@@ -1435,7 +1436,8 @@ def create_interactive_graph():
             color = 'gray'
         g.add_edge(bless.reactant.name, bless.product.name, 
                    title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', 
-                   color=color, width=(1-hue)*20+1)
+                   color={"highlight": "#FF00FF", 'color': color},
+                   width=(1-hue)*20+1)
         rr = min_names.index(bless.reactant.name)
         pp = min_names.index(bless.product.name)
         gnx.add_edge(rr, pp)
