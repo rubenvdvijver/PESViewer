@@ -1466,7 +1466,7 @@ def create_interactive_graph(user_input):
         # write new pesviewer input for just this path
         path_chemid = [match_species(ii) for ii in max_barr_path]
         input_lines = user_input.split('\n')
-        with open(f'{rname}_{pname}.inp', 'w') as f:
+        with open(f'{path_chemid[0]}_{path_chemid[-1]}.inp', 'w') as f:
             stop = write_section(f, input_lines, '> <wells>', 0, path_chemid)
             stop = write_section(f, input_lines, '> <bimolec>', stop, path_chemid)
             stop = write_section(f, input_lines, '> <ts>', stop, path_chemid)
