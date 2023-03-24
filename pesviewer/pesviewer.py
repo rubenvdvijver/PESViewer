@@ -440,7 +440,7 @@ def read_input(fname):
     # change the linewidth of the traditional Pot. vs Reac. Coord. plot.
     options['lw'] = 1.5
     # print report on paths connecting two species. Replace 0 with the two species names if to be activated.
-    options['path_report'] = 0
+    options['path_report'] = ['0']
     # depth of search
     options['search_cutoff'] = 10
 
@@ -1453,7 +1453,7 @@ def create_interactive_graph(user_input):
         max_barr = 10000000.
         for path in paths:
             path_energies = [gnx[path[i]][path[i+1]]['energy'] for i in range(len(path)-1)]    
-            if max_barr > max(path_energies):
+            if (max_barr == max(path_energies) and len(path) < len(max_barr_path)) or max_barr > max(path_energies):
                 max_barr = max(path_energies)  # the smallest max barrier, the bottle neck
                 max_barr_path = path
                 max_barr_ens = path_energies
@@ -1504,12 +1504,18 @@ def write_section(f, input_lines, stopsign, start, path):
                 if len(line.split()) < 4:
                     f.write(f'{line}\n')
                 elif line.split()[2] in path and line.split()[3] in path:
-                    f.write(f'{line}\n')
+                    if abs(path.index(line.split()[2]) - path.index(line.split()[3])) != 1:
+                        continue
+                    else:
+                        f.write(f'{line}\n')
             elif stopsign == '> <help>':
                 if len(line.split()) < 3: 
                     f.write(f'{line}\n')
                 elif line.split()[1] in path and line.split()[2] in path:
-                    f.write(f'{line}\n')
+                    if abs(path.index(line.split()[1]) - path.index(line.split()[2])) != 1:
+                        continue
+                    else:
+                        f.write(f'{line}\n')
             else:
                 f.write(f'{line}\n')
         else:
