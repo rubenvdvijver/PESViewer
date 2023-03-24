@@ -321,7 +321,7 @@ class barrierless:
         self.name = name
         self.xyz_files = []
         self.color = col
-        fn = 'xyz/{name}.xyz'.format(name=name)
+        fn = f'xyz/{name}.xyz'
         if os.path.exists(fn):
             self.xyz_files.append(fn)
         self.reactant = next((w for w in wells if w.name == names[0]), None)
@@ -338,6 +338,7 @@ class barrierless:
         if self.product is None:
             e = exceptions.not_recognized('product', names[1], name)
             raise Exception(e)
+        self.energy = self.product.energy
         self.line = None
     # end def
 # end class
