@@ -1397,13 +1397,13 @@ def create_interactive_graph():
         g.add_node(well.name, label=str(round(well.energy - base_energy, 1)),
                    borderWidth=3, title=f'{well.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{well.name}_2d.png', size=80,
-                   font='30', color='black')
+                   font='30', color={"highlight": "#FF00FF", 'color': 'black'})
         gnx.add_node(i)
     for i, bim in enumerate(bimolecs):
         g.add_node(bim.name, label=str(round(bim.energy - base_energy, 1)),
                    borderWidth=3, title=f'{bim.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80,
-                   font='30', color='blue')
+                   font='30', color={"highlight": "#FF00FF", 'color': 'blue'})
         gnx.add_node(i+len(wells))
 
     color_min = min([ts.energy for ts in tss])
