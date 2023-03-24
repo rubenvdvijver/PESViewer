@@ -1489,7 +1489,7 @@ def write_section(f, input_lines, stopsign, start, path):
             if stopsign == '> <wells>':
                 if line.startswith('> <id>'):
                     f.write(f'> <id> aux_{path[0]}_{path[-1]}\n')
-                if line.startswith('plot'):
+                elif line.startswith('plot'):
                     f.write(f'plot 1\n')
                 elif line.startswith('path_report') or line.startswith('search_cutoff'):
                     continue
