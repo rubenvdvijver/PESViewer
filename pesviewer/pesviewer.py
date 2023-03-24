@@ -1452,12 +1452,13 @@ def create_interactive_graph(user_input):
         paths = nx.all_simple_paths(gnx, rr, pp, cutoff=options['search_cutoff'])
         max_barr = 10000000.
         for path in paths:
-            path_energies = [gnx[path[i]][path[i+1]]['energy'] for i in range(len(path)-1)]    
-            if (max_barr == max(path_energies) and len(path) < len(max_barr_path)) or max_barr > max(path_energies):
-                max_barr = max(path_energies)  # the smallest max barrier, the bottle neck
-                max_barr_path = path
-                max_barr_ens = path_energies
-                max_barr_path_bn = path_energies.index(max(path_energies))
+            if is_path_valid(path):
+                path_energies = [gnx[path[i]][path[i+1]]['energy'] for i in range(len(path)-1)]    
+                if (max_barr == max(path_energies) and len(path) < len(max_barr_path)) or max_barr > max(path_energies):
+                    max_barr = max(path_energies)  # the smallest max barrier, the bottle neck
+                    max_barr_path = path
+                    max_barr_ens = path_energies
+                    max_barr_path_bn = path_energies.index(max(path_energies))
         print(f'The bottle neck barrier with {options["search_cutoff"]} depth search is {max_barr} kcal/mol high')
         rname = match_species(max_barr_path[max_barr_path_bn])
         pname = match_species(max_barr_path[max_barr_path_bn+1])
@@ -1474,6 +1475,12 @@ def create_interactive_graph(user_input):
             stop = write_section(f, input_lines, '> <help>', stop, path_chemid)
 
     return 0
+
+def is_path_valid(path):
+    for sp in path[1:-1]:
+        if sp >= len(wells):
+            return False
+    return True
 
 def match_species(species_index):
     """Provide the species name given the index in [wells, bimolecs]
