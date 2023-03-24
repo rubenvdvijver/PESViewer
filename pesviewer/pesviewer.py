@@ -1398,13 +1398,13 @@ def create_interactive_graph(user_input):
         g.add_node(well.name, label=str(round(well.energy - base_energy, 1)),
                    borderWidth=3, title=f'{well.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{well.name}_2d.png', size=80,
-                   font='30', color='black')
+                   font='30', color={"highlight": "#FF00FF", 'color': 'black'})
         gnx.add_node(i)
     for i, bim in enumerate(bimolecs):
         g.add_node(bim.name, label=str(round(bim.energy - base_energy, 1)),
                    borderWidth=3, title=f'{bim.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80,
-                   font='30', color='blue')
+                   font='30', color={"highlight": "#FF00FF", 'color': 'blue'})
         gnx.add_node(i+len(wells))
 
     color_min = min([ts.energy for ts in tss])
@@ -1421,7 +1421,8 @@ def create_interactive_graph(user_input):
             color = ts.color
         g.add_edge(ts.reactant.name, ts.product.name,
                    title=f'{round(ts.energy - base_energy, 1)} kcal/mol',
-                   color=color, width=(1-hue)*20+1)
+                   color={"highlight": "#FF00FF", 'color': color}, 
+                   width=(1-hue)*20+1)
         rr = min_names.index(ts.reactant.name)
         pp = min_names.index(ts.product.name)
         gnx.add_edge(rr, pp)
@@ -1436,7 +1437,8 @@ def create_interactive_graph(user_input):
             color = 'gray'
         g.add_edge(bless.reactant.name, bless.product.name, 
                    title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', 
-                   color=color, width=(1-hue)*20+1)
+                   color={"highlight": "#FF00FF", 'color': color},
+                   width=(1-hue)*20+1)
         rr = min_names.index(bless.reactant.name)
         pp = min_names.index(bless.product.name)
         gnx.add_edge(rr, pp)
