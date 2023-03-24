@@ -382,9 +382,9 @@ def read_input(fname):
     if not os.path.exists(fname):  # check if file exists
         raise Exception(fname + ' does not exist')
     # end if
-    f = open(fname, 'r')
-    a = f.read()
-    f.close()
+    with open(fname, 'r') as f:
+        a = f.read()
+    
     a = a.replace('\r\n', '\n').replace('\r', '\n').replace('\n\n', '\n')
     inputs = get_sd_prop(a)
     options['id'] = inputs['id'][0]
@@ -563,6 +563,7 @@ def read_input(fname):
         b = barrierless(name, names, col=col)
         barrierlesss.append(b)
     # end for
+    return a
 # end def
 
 
@@ -1364,7 +1365,7 @@ def read_im_extent():
 # end def
 
 
-def create_interactive_graph():
+def create_interactive_graph(user_input):
     """
     Create an interactive graph with pyvis.
     """
@@ -1448,9 +1449,6 @@ def create_interactive_graph():
         pp = min_names.index(options['path_report'][1])
         paths = nx.all_simple_paths(gnx, rr, pp, cutoff=options['search_cutoff'])
         max_barr = 10000000.
-        max_barr_path = []
-        max_barr_ens = []
-        max_barr_path_bn = []
         for path in paths:
             path_energies = [gnx[path[i]][path[i+1]]['energy'] for i in range(len(path)-1)]    
             if max_barr > max(path_energies):
@@ -1459,17 +1457,61 @@ def create_interactive_graph():
                 max_barr_ens = path_energies
                 max_barr_path_bn = path_energies.index(max(path_energies))
         print(f'The bottle neck barrier with {options["search_cutoff"]} depth search is {max_barr} kcal/mol high')
-        if max_barr_path[max_barr_path_bn] < len(wells):
-            rname = wells[max_barr_path[max_barr_path_bn]].name
-        else:
-            rname = bimolecs[max_barr_path[max_barr_path_bn]-len(wells)].name
-        if max_barr_path[max_barr_path_bn+1] < len(wells):
-            pname = wells[max_barr_path[max_barr_path_bn+1]].name
-        else:
-            pname = bimolecs[max_barr_path[max_barr_path_bn+1]-len(wells)].name
+        rname = match_species(max_barr_path[max_barr_path_bn])
+        pname = match_species(max_barr_path[max_barr_path_bn+1])
         print(f'and it is between species {rname} and {pname}.')
+
+        # write new pesviewer input for just this path
+        path_chemid = [match_species(ii) for ii in max_barr_path]
+        input_lines = user_input.split('\n')
+        with open(f'{rname}_{pname}.inp', 'w') as f:
+            stop = write_section(f, input_lines, '> <wells>', 0, path_chemid)
+            stop = write_section(f, input_lines, '> <bimolec>', stop, path_chemid)
+            stop = write_section(f, input_lines, '> <ts>', stop, path_chemid)
+            stop = write_section(f, input_lines, '> <barrierless>', stop, path_chemid)
+            stop = write_section(f, input_lines, '> <help>', stop, path_chemid)
+
     return 0
 
+def match_species(species_index):
+    """Provide the species name given the index in [wells, bimolecs]
+    """
+    if species_index < len(wells):
+        return wells[species_index].name
+    else:
+        return bimolecs[species_index - len(wells)].name
+
+def write_section(f, input_lines, stopsign, start, path):
+    for ll, line in enumerate(input_lines[start:]):
+        if not line.startswith(stopsign):
+            if stopsign == '> <wells>':
+                if line.startswith('> <id>'):
+                    f.write(f'> <id> aux_{path[0]}_{path[-1]}\n')
+                if line.startswith('plot'):
+                    f.write(f'plot 1\n')
+                elif line.startswith('path_report') or line.startswith('search_cutoff'):
+                    continue
+                else:
+                    f.write(f'{line}\n')
+            elif stopsign == '> <bimolec>' or stopsign == '> <ts>':
+                if line.split()[0] in path:
+                    f.write(f'{line}\n')
+                elif line.startswith('>'):
+                    f.write(f'{line}\n')
+            elif stopsign == '> <barrierless>':
+                if len(line.split()) < 4:
+                    f.write(f'{line}\n')
+                elif line.split()[2] in path and line.split()[3] in path:
+                    f.write(f'{line}\n')
+            elif stopsign == '> <help>':
+                if len(line.split()) < 3: 
+                    f.write(f'{line}\n')
+                elif line.split()[1] in path and line.split()[2] in path:
+                    f.write(f'{line}\n')
+            else:
+                f.write(f'{line}\n')
+        else:
+            return ll+start
 
 def main():
     """Main method to run the PESViewer
@@ -1487,7 +1529,7 @@ def main():
         print('To use the pesviewer, supply an input file as argument.')
         sys.exit(-1)
     # end if
-    read_input(fname)  # read the input file
+    user_input = read_input(fname)  # read the input file
     # initialize the dictionaries
     for w in wells:
         linesd[w] = []
@@ -1509,7 +1551,7 @@ def main():
     generate_2d_depiction()
     if options['plot']:
         plot()  # plot the graph
-    create_interactive_graph()
+    create_interactive_graph(user_input)
 # end def
 
 
