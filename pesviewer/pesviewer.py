@@ -435,10 +435,14 @@ def read_input(fname):
     options['graph_edge_color'] = 'black'
     # show the plot
     options['plot'] = 1
-    # DEnable/disable generation of 2D depictions for resonant structures.
+    # enable/disable generation of 2D depictions for resonant structures.
     options['reso_2d'] = 1
-    # Change the linewidth of the traditional Pot. vs Reac. Coord. plot.
+    # change the linewidth of the traditional Pot. vs Reac. Coord. plot.
     options['lw'] = 1.5
+    # print report on paths connecting two species. Replace 0 with the two species names if to be activated.
+    options['path_report'] = 0
+    # depth of search
+    options['search_cutoff'] = 10
 
     if 'options' in inputs:
         for line in inputs['options']:
@@ -491,6 +495,10 @@ def read_input(fname):
                 options['reso_2d'] = int(line.split()[1])
             elif line.startswith('lw'):
                 options['lw'] = float(line.split()[1])
+            elif line.startswith('path_report'):
+                options['path_report'] = [str(i) for i in line.split()[1:]]
+            elif line.startswith('search_cutoff'):
+                options['search_cutoff'] = int(line.split()[1])
             elif line.startswith('#'):
                 # comment line, don't do anything
                 continue
@@ -1362,6 +1370,7 @@ def create_interactive_graph():
     """
 
     try:
+        import networkx as nx
         from pyvis import network as net
     except ImportError:
         print('pyvis cannot be imported, no interactive graph is made.')
@@ -1373,11 +1382,15 @@ def create_interactive_graph():
         return
 
     g = net.Network(height='1000px', width='90%', heading='')
+    gnx = nx.Graph()  # create for path_report
     base_energy = 0.
+    min_names = []  # list containing the names of all minima, wells, then bimolecs
     for well in wells:
+        min_names.append(well.name)
         if well.name == options['rescale']:
             base_energy = well.energy
     for bim in bimolecs:
+        min_names.append(bim.name)
         if bim.name == options['rescale']:
             base_energy = bim.energy
     for i, well in enumerate(wells):
@@ -1385,11 +1398,13 @@ def create_interactive_graph():
                    borderWidth=3, title=f'{well.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{well.name}_2d.png', size=80,
                    font='30', color='black')
+        gnx.add_node(i)
     for i, bim in enumerate(bimolecs):
         g.add_node(bim.name, label=str(round(bim.energy - base_energy, 1)),
                    borderWidth=3, title=f'{bim.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80,
                    font='30', color='blue')
+        gnx.add_node(i+len(wells))
 
     color_min = min([ts.energy for ts in tss])
     color_max = max([ts.energy for ts in tss])
@@ -1406,6 +1421,10 @@ def create_interactive_graph():
         g.add_edge(ts.reactant.name, ts.product.name,
                    title=f'{round(ts.energy - base_energy, 1)} kcal/mol',
                    color=color, width=(1-hue)*20+1)
+        rr = min_names.index(ts.reactant.name)
+        pp = min_names.index(ts.product.name)
+        gnx.add_edge(rr, pp)
+        gnx[rr][pp]['energy'] = round(ts.energy - base_energy, 1)
 
     for bless in barrierlesss:
         hue = (bless.product.energy - color_min) / color_range
@@ -1417,9 +1436,38 @@ def create_interactive_graph():
         g.add_edge(bless.reactant.name, bless.product.name, 
                    title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', 
                    color=color, width=(1-hue)*20+1)
+        rr = min_names.index(bless.reactant.name)
+        pp = min_names.index(bless.product.name)
+        gnx.add_edge(rr, pp)
+        gnx[rr][pp]['energy'] = round(bless.product.energy - base_energy, 1)
 
     g.show_buttons(filter_=['physics'])
     g.save_graph(f'{options["id"]}.html')
+    if options['path_report'][0] != '0':
+        rr = min_names.index(options['path_report'][0])
+        pp = min_names.index(options['path_report'][1])
+        paths = nx.all_simple_paths(gnx, rr, pp, cutoff=options['search_cutoff'])
+        max_barr = 10000000.
+        max_barr_path = []
+        max_barr_ens = []
+        max_barr_path_bn = []
+        for path in paths:
+            path_energies = [gnx[path[i]][path[i+1]]['energy'] for i in range(len(path)-1)]    
+            if max_barr > max(path_energies):
+                max_barr = max(path_energies)  # the smallest max barrier, the bottle neck
+                max_barr_path = path
+                max_barr_ens = path_energies
+                max_barr_path_bn = path_energies.index(max(path_energies))
+        print(f'The bottle neck barrier with {options["search_cutoff"]} depth search is {max_barr} kcal/mol high')
+        if max_barr_path[max_barr_path_bn] < len(wells):
+            rname = wells[max_barr_path[max_barr_path_bn]].name
+        else:
+            rname = bimolecs[max_barr_path[max_barr_path_bn]-len(wells)].name
+        if max_barr_path[max_barr_path_bn+1] < len(wells):
+            pname = wells[max_barr_path[max_barr_path_bn+1]].name
+        else:
+            pname = bimolecs[max_barr_path[max_barr_path_bn+1]-len(wells)].name
+        print(f'and it is between species {rname} and {pname}.')
     return 0
 
 
