@@ -1,40 +1,31 @@
-#!/usr/bin/env python
+"""This code reads in an input files containing the wells, bimolecular products,
+transition states andbarrierless reactions and creates a PES plot
 """
-This code reads in an input files containing the wells,
-bimolecular products, transition states and
-barrierless reactions and creates a PES plot
-"""
-from __future__ import print_function, division
-
 import os
 import sys
+import math
+
 import matplotlib
-matplotlib.use('TkAgg')
-from matplotlib import pylab as plt
+# matplotlib.use('TkAgg')
+from matplotlib import pylab as plt  # translate into pyplot.
 import matplotlib.image as mpimg
 import numpy as np
 import numpy.linalg as la
-import math
-# try import RDKit
 try:
     from rdkit import Chem
     from rdkit.Chem import Draw
     from rdkit.Chem import AllChem
 except ImportError:
     print("Could not import rdkit, the code will likely not work.")
-# end try
-
-# try import pybel
 try:
     import pybel
     pybel.ob.obErrorLog.SetOutputLevel(0)
-except:
+except (ImportError, ModuleNotFoundError):
     try:
         from openbabel import pybel
         pybel.ob.obErrorLog.SetOutputLevel(0)
     except (ImportError, ModuleNotFoundError):
         print("Could not import pybel, the code will likely not work.")
-# end try
 
 # contains all the options for this PES
 options = {}
@@ -441,7 +432,7 @@ def read_input(fname):
     # change the linewidth of the traditional Pot. vs Reac. Coord. plot.
     options['lw'] = 1.5
     # print report on paths connecting two species. Replace 0 with the two species names if to be activated.
-    options['path_report'] = ['0']
+    options['path_report'] = []
     # depth of search
     options['search_cutoff'] = 10
 
@@ -497,7 +488,8 @@ def read_input(fname):
             elif line.startswith('lw'):
                 options['lw'] = float(line.split()[1])
             elif line.startswith('path_report'):
-                options['path_report'] = [str(i) for i in line.split()[1:]]
+                options['path_report'].append(tuple(str(i) 
+                                                    for i in line.split()[1:]))
             elif line.startswith('search_cutoff'):
                 options['search_cutoff'] = int(line.split()[1])
             elif line.startswith('#'):
@@ -733,7 +725,7 @@ def get_sizes():
 # end def
 
 
-def plot():
+def plot(mep=None):
     """
     Plotter method takes all the lines and plots them in one graph
     """
@@ -785,13 +777,37 @@ def plot():
             # add to dictionary with the well it belongs to as key
             imgsd[s] = im
         # end if
-    # end def
+    
+    if mep:
+        plot_tss, plot_bless, plot_wells, plot_bimols = [], [], [], []
+        for ts in tss:
+            if ts.reactant.name in mep and ts.product.name in mep:
+                plot_tss.append(ts)
+        for bles in barrierlesss:
+            if bles.reactant.name in mep and bles.product.name in mep:
+                plot_bless.append(bles)
+        for well in wells:
+            if well.name in mep:
+                plot_wells.append(well)
+        for bimol in bimolecs:
+            if bimol.name in mep:
+                plot_bimols.append(bimol)
+        plot_name = mep[0] + '_' + mep[-1]
+    else:
+        plot_tss = tss
+        plot_bless = barrierlesss
+        plot_wells = wells
+        plot_bimols = bimolecs
+        plot_name = options['id']
+    
+    read_im_extent(plot_name)                
+
     lines = []
-    for t in tss:
+    for t in plot_tss:
         lines.append(t.lines[0])
         lines.append(t.lines[1])
     # end for
-    for b in barrierlesss:
+    for b in plot_bless:
         lines.append(b.line)
     # end for
     get_sizes()
@@ -810,20 +826,20 @@ def plot():
     ax.set_xticklabels([])
 
     if options['show_images']:
-        for w in wells:
+        for w in plot_wells:
             showimage(w)
         # end for
-        for b in bimolecs:
+        for b in plot_bimols:
             showimage(b)
         # end for
-    save_im_extent()  # save the positions of the images to a file
+    save_im_extent(plot_name)  # save the positions of the images to a file
     
     # draw the lines
     # in case of linear lines, calculate the distance of the horizontal pieces
     if options['linear_lines']:
-        xlen = (len(wells) + len(bimolecs)) / (4 * (xhigh - xlow))
+        xlen = (len(plot_wells) + len(plot_bimols)) / (4 * (xhigh - xlow))
     
-    for i, line in enumerate(lines):
+    for line in lines:
         lw = options['lw']
         alpha = 1.0
         ls = 'solid'
@@ -885,7 +901,7 @@ def plot():
     ax.set_ylim([ylow-ymargin, yhigh+ymargin])
 
     # write the name and energies to the plot
-    for w in wells:
+    for w in plot_wells:
         if options['write_well_values']:
             t = ax.text(w.x,
                         w.y-ymargin/10,
@@ -898,7 +914,7 @@ def plot():
             textd[w] = t
         # end if
     # end for
-    for b in bimolecs:
+    for b in plot_bimols:
         if options['write_well_values']:
             # write the text values below the line:
             t = ax.text(b.x,
@@ -913,7 +929,7 @@ def plot():
             textd[b] = t
         # end if
     # end for
-    for t in tss:
+    for t in plot_tss:
         if options['write_ts_values']:
             color = t.color
             if options['ts_color'] != 'none':
@@ -938,8 +954,11 @@ def plot():
         plt.title('Potential energy surface of {id}'.format(id=options['id']))
     plt.ylabel('Energy ({units})'.format(units=options['units']))
     if options['save']:
-        plt.savefig('{id}_pes_plot.png'.format(id=options['id']),
-                    bbox_inches='tight')
+        if mep:
+            name = mep[0] + '_' + mep[-1]
+        else:
+            name = options['id']
+        plt.savefig(f'{name}_pes_plot.png', bbox_inches='tight')
     else:
         plt.show()
 # end def
@@ -1333,11 +1352,9 @@ def save_x_values():
 # end def
 
 
-def save_im_extent():
-    """
-    save the x values of the stationary points to an external file
-    """
-    fi = open('{id}_im_extent.txt'.format(id=options['id']), 'w')
+def save_im_extent(name):
+    """Save the x values of the stationary points to an external file"""
+    fi = open(f'{name}_im_extent.txt', 'w')
     for key in imgsd:
         e = imgsd[key].get_extent()
         vals = '{:.2f} {:.2f} {:.2f} {:.2f}'.format(e[0], e[1], e[2], e[3])
@@ -1346,11 +1363,9 @@ def save_im_extent():
 # end def
 
 
-def read_im_extent():
-    """
-    Read the extents of the images if they are present in a file_name
-    """
-    fname = '{id}_im_extent.txt'.format(id=options['id'])
+def read_im_extent(name):
+    """Read the extents of the images if they are present in a file_name."""
+    fname = f'{name}_im_extent.txt'
     if os.path.exists(fname):
         fi = open(fname, 'r')
         a = fi.read()
@@ -1366,125 +1381,66 @@ def read_im_extent():
 # end def
 
 
-def create_interactive_graph(user_input):
-    """
-    Create an interactive graph with pyvis.
-    """
-
+def create_interactive_graph(meps):
+    """Create an interactive graph with pyvis."""
     try:
-        import networkx as nx
         from pyvis import network as net
     except ImportError:
         print('pyvis cannot be imported, no interactive graph is made.')
         return
     
     g = net.Network(height='1000px', width='90%', heading='')
-    gnx = nx.Graph()  # create for path_report
-    base_energy = 0.
-    min_names = []  # list containing the names of all minima, wells, then bimolecs
+
+    base_energy = next(species.energy for species in wells + bimolecs 
+                       if species.name == options['rescale'])
     for well in wells:
-        min_names.append(well.name)
-        if well.name == options['rescale']:
-            base_energy = well.energy
-    for bim in bimolecs:
-        min_names.append(bim.name)
-        if bim.name == options['rescale']:
-            base_energy = bim.energy
-    for i, well in enumerate(wells):
         g.add_node(well.name, label=str(round(well.energy - base_energy, 1)),
                    borderWidth=3, title=f'{well.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{well.name}_2d.png', size=80,
-                   font='30', color={"highlight": "#FF00FF", 'color': 'black'})
-        gnx.add_node(i)
-    for i, bim in enumerate(bimolecs):
+                   font='30', color={'highlight': '#FF00FF', 'color': 'black'})
+    for bim in bimolecs:
         g.add_node(bim.name, label=str(round(bim.energy - base_energy, 1)),
                    borderWidth=3, title=f'{bim.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80,
-                   font='30', color={"highlight": "#FF00FF", 'color': 'blue'})
-        gnx.add_node(i+len(wells))
+                   font='30', color={'highlight': '#FF00FF', 'color': 'blue'})
 
-    color_min = min([ts.energy for ts in tss])
-    color_max = max([ts.energy for ts in tss])
-    color_range = color_max - color_min
+    min_ts_energy = min([ts.energy for ts in tss])
+    max_ts_energy = max([ts.energy for ts in tss])
+    ts_energy_range = max_ts_energy - min_ts_energy
     cmap = plt.get_cmap('viridis')
 
     for ts in tss:
-        hue = (ts.energy - color_min) / color_range
+        norm_energy = (ts.energy - min_ts_energy) / ts_energy_range
         if options['graph_edge_color'] == 'energy':
-            red, green, blue = np.array(cmap.colors[int(hue * 255)]) * 255 
+            red, green, blue = np.array(cmap.colors[int(norm_energy * 255)]) * 255 
             color = f'rgb({red},{green},{blue})'
         else:  
             color = ts.color
         g.add_edge(ts.reactant.name, ts.product.name,
                    title=f'{round(ts.energy - base_energy, 1)} kcal/mol',
                    color={"highlight": "#FF00FF", 'color': color}, 
-                   width=(1-hue)*20+1)
-        rr = min_names.index(ts.reactant.name)
-        pp = min_names.index(ts.product.name)
-        gnx.add_edge(rr, pp)
-        gnx[rr][pp]['energy'] = round(ts.energy - base_energy, 1)
+                   width=(1-norm_energy)*20+1)
 
     for bless in barrierlesss:
-        hue = (bless.product.energy - color_min) / color_range
+        norm_energy = (bless.product.energy - min_ts_energy) / ts_energy_range
         if options['graph_edge_color'] == 'energy':
-            red, green, blue = np.array(cmap.colors[int(hue * 255)]) * 255 
+            red, green, blue = np.array(cmap.colors[int(norm_energy * 255)]) * 255 
             color = f'rgb({red},{green},{blue})'
         else:  
             color = 'gray'
         g.add_edge(bless.reactant.name, bless.product.name, 
                    title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', 
                    color={"highlight": "#FF00FF", 'color': color},
-                   width=(1-hue)*20+1)
-        rr = min_names.index(bless.reactant.name)
-        pp = min_names.index(bless.product.name)
-        gnx.add_edge(rr, pp)
-        gnx[rr][pp]['energy'] = round(bless.product.energy - base_energy, 1)
+                   width=(1-norm_energy)*20+1)
 
     g.show_buttons(filter_=['physics'])
     g.save_graph(f'{options["id"]}.html')
-    if options['path_report'][0] != '0':
-        rr = min_names.index(options['path_report'][0])
-        pp = min_names.index(options['path_report'][1])
-        paths = nx.all_simple_paths(gnx, rr, pp, cutoff=options['search_cutoff'])
-        max_barr = 10000000.
-        for path in paths:
-            if is_path_valid(path):
-                path_energies = [gnx[path[i]][path[i+1]]['energy'] for i in range(len(path)-1)]    
-                if (max_barr == max(path_energies) and len(path) < len(max_barr_path)) or max_barr > max(path_energies):
-                    max_barr = max(path_energies)  # the smallest max barrier, the bottle neck
-                    max_barr_path = path
-                    max_barr_ens = path_energies
-                    max_barr_path_bn = path_energies.index(max(path_energies))
-        print(f'The bottle neck barrier with {options["search_cutoff"]} depth search is {max_barr} kcal/mol high')
-        rname = match_species(max_barr_path[max_barr_path_bn])
-        pname = match_species(max_barr_path[max_barr_path_bn+1])
-        print(f'and it is between species {rname} and {pname}.')
-
-        # write new pesviewer input for just this path
-        path_chemid = [match_species(ii) for ii in max_barr_path]
-        input_lines = user_input.split('\n')
-        with open(f'{path_chemid[0]}_{path_chemid[-1]}.inp', 'w') as f:
-            stop = write_section(f, input_lines, '> <wells>', 0, path_chemid)
-            stop = write_section(f, input_lines, '> <bimolec>', stop, path_chemid)
-            stop = write_section(f, input_lines, '> <ts>', stop, path_chemid)
-            stop = write_section(f, input_lines, '> <barrierless>', stop, path_chemid)
-            stop = write_section(f, input_lines, '> <help>', stop, path_chemid)
 
     return 0
 
-def is_path_valid(path):
-    for sp in path[1:-1]:
-        if sp >= len(wells):
-            return False
-    return True
 
-def match_species(species_index):
-    """Provide the species name given the index in [wells, bimolecs]
-    """
-    if species_index < len(wells):
-        return wells[species_index].name
-    else:
-        return bimolecs[species_index - len(wells)].name
+def is_path_valid(path):
+    return all(['_' not in name for name in path[1:-1]])
 
 
 def write_section(f, input_lines, stopsign, start, path):
@@ -1530,7 +1486,6 @@ def gen_graph():
     """Generate a networkx graph object to work with"""
     import networkx as nx
     graph = nx.Graph()
-    min_names = [species.name for species in wells + bimolecs]
     base_energy = next(species.energy for species in wells + bimolecs 
                        if species.name == options['rescale'])
     
@@ -1538,23 +1493,54 @@ def gen_graph():
         rname = reac.reactant.name
         pname = reac.product.name
         graph.add_edge(rname, pname)
-        graph[rname, pname]['energy'] = round(reac.energy - base_energy, 1)
+        graph[rname][pname]['energy'] = round(reac.energy - base_energy, 1)
 
     return graph
 
 
+def find_mep(graph, user_input):
+    import networkx as nx
+    meps = []
+    for species_pair in options['path_report']:
+        rname = species_pair[0]
+        pname = species_pair[1]
+        max_length = options['search_cutoff']
+        paths = nx.all_simple_paths(graph, rname, pname, cutoff=max_length)
+        max_barr = np.inf
+        for valid_path in [path for path in paths if is_path_valid(path)]:
+            path_energies = [graph[valid_path[i]][valid_path[i+1]]['energy'] 
+                             for i in range(len(valid_path)-1)]    
+            if (max_barr == max(path_energies) and len(valid_path) < len(mep)) \
+                    or max_barr > max(path_energies):
+                max_barr = max(path_energies)  # the smallest max barrier, the bottle neck
+                mep = valid_path
+        meps.append(mep)
+
+        print(f'The bottle neck barrier between {rname} and {pname} with a ' \
+              f'{options["search_cutoff"]} depth search is {max_barr} ' \
+              'kcal/mol high.')
+
+        # write new pesviewer input for just this path
+        input_lines = user_input.split('\n')
+        with open(f'{mep[0]}_{mep[-1]}.inp', 'w') as f:
+            stop = write_section(f, input_lines, '> <wells>', 0, mep)
+            stop = write_section(f, input_lines, '> <bimolec>', stop, mep)
+            stop = write_section(f, input_lines, '> <ts>', stop, mep)
+            stop = write_section(f, input_lines, '> <barrierless>', stop, mep)
+            stop = write_section(f, input_lines, '> <help>', stop, mep)
+
+    return meps
+
+
 def main():
-    """Main method to run the PESViewer
-    """
+    """Main method to run the PESViewer"""
     if len(sys.argv) > 1:  # read the arguments
         fname = sys.argv[1]
         options['save'] = 0
         options['save_from_command_line'] = 0
-        if len(sys.argv) > 2:
-            # argument to specify whether plot needs to be saved or displayed
-            if sys.argv[2] == 'save':
-                options['save'] = 1
-                options['save_from_command_line'] = 1
+        if len(sys.argv) > 2 and sys.argv[2] == 'save':  # Save the plot.
+            options['save'] = 1
+            options['save_from_command_line'] = 1
     elif len(sys.argv) == 1:
         print('To use the pesviewer, supply an input file as argument.')
         sys.exit(-1)
@@ -1573,15 +1559,19 @@ def main():
     for b in barrierlesss:
         linesd[b] = []
     # end for
-    read_im_extent()  # read the position of the images, if known
+    read_im_extent(options['id'])  # read the position of the images, if known
     position()  # find initial positions for all the species on the graph
     generate_lines()  # generate all the line
     # generate 2d depiction from the smiles or 3D structure,
     # store them in join(input_id, '_2d')
     generate_2d_depiction()
+    graph = gen_graph()
+    meps = find_mep(graph, user_input)
     if options['plot']:
-        plot()  # plot the graph
-    create_interactive_graph(user_input)
+        for mep in meps:
+            plot(mep)
+        plot()
+    create_interactive_graph(meps)
 # end def
 
 
