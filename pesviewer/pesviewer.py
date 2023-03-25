@@ -381,14 +381,14 @@ def read_input(fname):
     Method to read the input file
     """
     if not os.path.exists(fname):  # check if file exists
-        raise Exception(fname + ' does not exist')
+        raise FileNotFoundError(fname + ' does not exist')
     # end if
     with open(fname, 'r') as f:
-        a = f.read()
+        input_str = f.read()
     
-    a = a.replace('\r\n', '\n').replace('\r', '\n').replace('\n\n', '\n')
-    inputs = get_sd_prop(a)
-    options['id'] = inputs['id'][0]
+    input_str = input_str.replace('\r\n', '\n').replace('\r', '\n').replace('\n\n', '\n')
+    input_dict = get_sd_prop(input_str)
+    options['id'] = input_dict['id'][0]
     # by default, print the graph title
     options['title'] = 1
     # default units
@@ -445,8 +445,8 @@ def read_input(fname):
     # depth of search
     options['search_cutoff'] = 10
 
-    if 'options' in inputs:
-        for line in inputs['options']:
+    if 'options' in input_dict:
+        for line in input_dict['options']:
             if line.startswith('title'):
                 options['title'] = int(line.split()[1])
             elif line.startswith('units'):
@@ -515,7 +515,7 @@ def read_input(fname):
               'use an "options" input tag to put all the options')
     # end if
 
-    for w in inputs['wells']:
+    for w in input_dict['wells']:
         w = w.split()
         name = w[0]
         energy = eval(w[1])
@@ -526,7 +526,7 @@ def read_input(fname):
         w = well(name, energy, smi)
         wells.append(w)
     # end for
-    for b in inputs['bimolec']:
+    for b in input_dict['bimolec']:
         b = b.split()
         name = b[0]
         energy = eval(b[1])
@@ -541,7 +541,7 @@ def read_input(fname):
     # are read prior to the transition states and barrierless
     # reactions because they need to be added as reactants
     # and products
-    for t in inputs['ts']:
+    for t in input_dict['ts']:
         t = t.split()
         name = t[0]
         energy = eval(t[1])
@@ -554,7 +554,7 @@ def read_input(fname):
         t = ts(name, names, energy, col=col)
         tss.append(t)
     # end for
-    for b in inputs['barrierless']:
+    for b in input_dict['barrierless']:
         b = b.split()
         name = b[0]
         names = [b[1], b[2]]
@@ -564,7 +564,7 @@ def read_input(fname):
         b = barrierless(name, names, col=col)
         barrierlesss.append(b)
     # end for
-    return a
+    return input_str
 # end def
 
 
@@ -1377,12 +1377,7 @@ def create_interactive_graph(user_input):
     except ImportError:
         print('pyvis cannot be imported, no interactive graph is made.')
         return
-    try:
-        from IPython.core.display import display, HTML
-    except ImportError:
-        print('IPython cannot be imported, no interactive plot is made.')
-        return
-
+    
     g = net.Network(height='1000px', width='90%', heading='')
     gnx = nx.Graph()  # create for path_report
     base_energy = 0.
@@ -1490,6 +1485,7 @@ def match_species(species_index):
         return wells[species_index].name
     else:
         return bimolecs[species_index - len(wells)].name
+
 
 def write_section(f, input_lines, stopsign, start, path):
     for ll, line in enumerate(input_lines[start:]):
