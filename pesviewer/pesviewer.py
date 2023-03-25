@@ -726,9 +726,7 @@ def get_sizes():
 
 
 def plot(mep=None):
-    """
-    Plotter method takes all the lines and plots them in one graph
-    """
+    """Plotter method takes all the lines and plots them in one graph"""
     global xlow, xhigh, xmargin, ylow, yhigh, ymargin, xlen
 
     def showimage(s):
@@ -1483,7 +1481,11 @@ def write_section(f, input_lines, stopsign, start, path):
 
 
 def gen_graph():
-    """Generate a networkx graph object to work with"""
+    """Generate a networkx graph object to work with
+
+    Returns:
+        networkx.Graph: A Graph object representation of the PES.
+    """
     import networkx as nx
     graph = nx.Graph()
     base_energy = next(species.energy for species in wells + bimolecs 
@@ -1499,6 +1501,16 @@ def gen_graph():
 
 
 def find_mep(graph, user_input):
+    """Find the minimum energy path between two species in a PES.
+
+    Args:
+        graph (networkx.Graph): A graph object containing the information of 
+            the PES
+        user_input (str): The input file passed to pesviewer.
+
+    Returns:
+        NoneType: None
+    """
     import networkx as nx
     meps = []
     for species_pair in options['path_report']:
