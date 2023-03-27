@@ -1388,8 +1388,8 @@ def create_interactive_graph(meps):
     
     g = net.Network(height='1000px', width='90%', heading='')
 
-    base_energy = next(species.energy for species in wells + bimolecs 
-                       if species.name == options['rescale'])
+    base_energy = next((species.energy for species in wells + bimolecs 
+                        if species.name == options['rescale']), 0)
     for well in wells:
         g.add_node(well.name, label=str(round(well.energy - base_energy, 1)),
                    borderWidth=3, title=f'{well.name}', shape='circularImage',
@@ -1491,8 +1491,8 @@ def gen_graph():
     """
     import networkx as nx
     graph = nx.Graph()
-    base_energy = next(species.energy for species in wells + bimolecs 
-                       if species.name == options['rescale'])
+    base_energy = next((species.energy for species in wells + bimolecs 
+                        if species.name == options['rescale']), 0)
     
     for reac in tss + barrierlesss:
         rname = reac.reactant.name
