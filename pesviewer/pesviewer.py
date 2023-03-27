@@ -550,7 +550,7 @@ def read_input(fname):
         b = b.split()
         name = b[0]
         names = [b[1], b[2]]
-        col = 'black'
+        col = 'gray'
         if len(b) > 3:
             col = b[3]
         b = barrierless(name, names, col=col)
