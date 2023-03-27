@@ -778,19 +778,18 @@ def plot(mep=None):
     
     if mep:
         plot_tss, plot_bless, plot_wells, plot_bimols = [], [], [], []
-        for ts in tss:
-            if ts.reactant.name in mep and ts.product.name in mep:
-                plot_tss.append(ts)
-        for bles in barrierlesss:
-            if bles.reactant.name in mep and bles.product.name in mep:
-                plot_bless.append(bles)
+        for rxn in mep['rxns']:
+            if rxn in tss:
+                plot_tss.append(rxn)
+            elif rxn in barrierlesss:
+                plot_bless.append(rxn)
         for well in wells:
-            if well.name in mep:
+            if well.name in mep['species']:
                 plot_wells.append(well)
         for bimol in bimolecs:
-            if bimol.name in mep:
+            if bimol.name in mep['species']:
                 plot_bimols.append(bimol)
-        plot_name = mep[0] + '_' + mep[-1]
+        plot_name = mep['species'][0] + '_' + mep['species'][-1]
     else:
         plot_tss = tss
         plot_bless = barrierlesss
@@ -953,7 +952,7 @@ def plot(mep=None):
     plt.ylabel('Energy ({units})'.format(units=options['units']))
     if options['save']:
         if mep:
-            name = mep[0] + '_' + mep[-1]
+            name = mep['species'][0] + '_' + mep['species'][-1]
         else:
             name = options['id']
         plt.savefig(f'{name}_pes_plot.png', bbox_inches='tight')
@@ -1409,7 +1408,11 @@ def create_interactive_graph(meps):
 
     for ts in tss:
         norm_energy = (ts.energy - min_ts_energy) / ts_energy_range
-        if options['graph_edge_color'] == 'energy':
+        if ts in [mep['bottle_neck'] for mep in meps]:
+            color = '#E9C46A'
+        elif ts in [rxn for mep in meps for rxn in mep['rxns']]:
+            color = '#2A9D8F'
+        elif options['graph_edge_color'] == 'energy':
             red, green, blue = np.array(cmap.colors[int(norm_energy * 255)]) * 255 
             color = f'rgb({red},{green},{blue})'
         else:  
@@ -1417,7 +1420,7 @@ def create_interactive_graph(meps):
         g.add_edge(ts.reactant.name, ts.product.name,
                    title=f'{round(ts.energy - base_energy, 1)} kcal/mol',
                    color={"highlight": "#FF00FF", 'color': color}, 
-                   width=(1-norm_energy)*20+1)
+                   width=(1 - norm_energy) * 20 + 1)
 
     for bless in barrierlesss:
         norm_energy = (bless.product.energy - min_ts_energy) / ts_energy_range
@@ -1425,11 +1428,11 @@ def create_interactive_graph(meps):
             red, green, blue = np.array(cmap.colors[int(norm_energy * 255)]) * 255 
             color = f'rgb({red},{green},{blue})'
         else:  
-            color = 'gray'
+            color = bless.color
         g.add_edge(bless.reactant.name, bless.product.name, 
                    title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', 
                    color={"highlight": "#FF00FF", 'color': color},
-                   width=(1-norm_energy)*20+1)
+                   width=(1 - norm_energy) * 20 + 1)
 
     g.show_buttons(filter_=['physics'])
     g.save_graph(f'{options["id"]}.html')
@@ -1514,32 +1517,45 @@ def find_mep(graph, user_input):
     import networkx as nx
     meps = []
     for species_pair in options['path_report']:
-        rname = species_pair[0]
-        pname = species_pair[1]
+        meps.append({})
+        current_mep = meps[-1]
+        spec_1 = species_pair[0]
+        spec_2 = species_pair[1]
         max_length = options['search_cutoff']
-        paths = nx.all_simple_paths(graph, rname, pname, cutoff=max_length)
+        paths = nx.all_simple_paths(graph, spec_1, spec_2, cutoff=max_length)
         max_barr = np.inf
         for valid_path in [path for path in paths if is_path_valid(path)]:
             path_energies = [graph[valid_path[i]][valid_path[i+1]]['energy'] 
                              for i in range(len(valid_path)-1)]    
-            if (max_barr == max(path_energies) and len(valid_path) < len(mep)) \
+            if (max_barr == max(path_energies) and len(valid_path) < len(mep_species)) \
                     or max_barr > max(path_energies):
-                max_barr = max(path_energies)  # the smallest max barrier, the bottle neck
-                mep = valid_path
-        meps.append(mep)
+                max_barr = max(path_energies)  # the bottle neck
+                mep_species = valid_path
+                bottle_neck_idx = path_energies.index(max_barr)
+        current_mep['species'] = mep_species
+        current_mep['energies'] = path_energies
+        current_mep['rxns'] = []
+        for i, sp in enumerate(mep_species[:-1]):
+            for rxn in tss + barrierlesss:
+                rname = rxn.reactant.name
+                pname = rxn.product.name
+                if (rname == sp and pname == mep_species[i+1]) \
+                        or (pname == sp and rname == mep_species[i+1]):
+                    current_mep['rxns'].append(rxn)
+        current_mep['bottle_neck'] = current_mep['rxns'][bottle_neck_idx]
 
-        print(f'The bottle neck barrier between {rname} and {pname} with a ' \
+        print(f'The bottle neck barrier between {spec_1} and {spec_2} with a ' \
               f'{options["search_cutoff"]} depth search is {max_barr} ' \
               'kcal/mol high.')
 
         # write new pesviewer input for just this path
         input_lines = user_input.split('\n')
-        with open(f'{mep[0]}_{mep[-1]}.inp', 'w') as f:
-            stop = write_section(f, input_lines, '> <wells>', 0, mep)
-            stop = write_section(f, input_lines, '> <bimolec>', stop, mep)
-            stop = write_section(f, input_lines, '> <ts>', stop, mep)
-            stop = write_section(f, input_lines, '> <barrierless>', stop, mep)
-            stop = write_section(f, input_lines, '> <help>', stop, mep)
+        with open(f'{mep_species[0]}_{mep_species[-1]}.inp', 'w') as f:
+            stop = write_section(f, input_lines, '> <wells>', 0, mep_species)
+            stop = write_section(f, input_lines, '> <bimolec>', stop, mep_species)
+            stop = write_section(f, input_lines, '> <ts>', stop, mep_species)
+            stop = write_section(f, input_lines, '> <barrierless>', stop, mep_species)
+            stop = write_section(f, input_lines, '> <help>', stop, mep_species)
 
     return meps
 
