@@ -4,7 +4,6 @@ transition states andbarrierless reactions and creates a PES plot
 import os
 import sys
 import math
-from distutils.util import strtobool
 
 import matplotlib
 matplotlib.use('TkAgg')
@@ -437,7 +436,7 @@ def read_input(fname):
     # depth of search
     options['search_cutoff'] = 10
     # Scale graph nodes according to their stability.
-    options['prop_node_size'] = False
+    options['node_size_diff'] = 0
 
     if 'options' in input_dict:
         for line in input_dict['options']:
@@ -495,8 +494,8 @@ def read_input(fname):
                                                     for i in line.split()[1:]))
             elif line.startswith('search_cutoff'):
                 options['search_cutoff'] = int(line.split()[1])
-            elif line.startswith('prop_node_size'):
-                options['prop_node_size'] = strtobool(line.split()[1])
+            elif line.startswith('node_size_diff'):
+                options['node_size_diff'] = float(line.split()[1])
             elif line.startswith('#'):
                 # comment line, don't do anything
                 continue
@@ -1373,11 +1372,8 @@ def create_interactive_graph(meps):
     max_well_energy = max([w.energy for w in wells])
     well_energy_range = max_well_energy - min_well_energy
     for well in wells:
-        if options['prop_node_size']:
-            norm_energy = (well.energy - min_well_energy) / well_energy_range
-            size = (1 - norm_energy) * 40 + 60
-        else:
-            size = 80
+        norm_energy = (well.energy - min_well_energy) / well_energy_range
+        size = (1 - norm_energy) * options['node_size_diff'] + 80
         g.add_node(well.name, label=str(round(well.energy - base_energy, 1)),
                    borderWidth=3, title=f'{well.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{well.name}_2d.png', size=size,
