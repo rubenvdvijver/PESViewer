@@ -395,12 +395,16 @@ def read_input(fname):
     options['fw'] = 18.
     # scale factor for figures
     options['fs'] = 1.
+    # change the linewidth of the traditional Pot. vs Reac. Coord. plot.
+    options['lw'] = 1.5
     # default margin on the x and y axis
     options['margin'] = 0.2
     # default dpi of the molecule figures
     options['dpi'] = 120
     # does the plot need to be saved (1) or displayed (0)
     options['save'] = 0
+    # Whether to plot the 
+    options['plot'] = 1
     # booleans tell if the ts energy values should be written
     options['write_ts_values'] = 1
     # booleans tell if the well and bimolecular energy values should be written
@@ -425,12 +429,8 @@ def read_input(fname):
     options['interpolation'] = 'hanning'
     # graphs edge color, if set to 'energy', will be colored by that
     options['graph_edge_color'] = 'black'
-    # show the plot
-    options['plot'] = 1
     # enable/disable generation of 2D depictions for resonant structures.
     options['reso_2d'] = 1
-    # change the linewidth of the traditional Pot. vs Reac. Coord. plot.
-    options['lw'] = 1.5
     # print report on paths connecting two species. Replace 0 with the two species names if to be activated.
     options['path_report'] = []
     # depth of search
@@ -454,6 +454,8 @@ def read_input(fname):
                 options['fw'] = float(line.split()[1])
             elif line.startswith('fs'):
                 options['fs'] = float(line.split()[1])
+            elif line.startswith('lw'):
+                options['lw'] = float(line.split()[1])
             elif line.startswith('margin'):
                 options['margin'] = float(line.split()[1])
             elif line.startswith('dpi'):
@@ -461,6 +463,8 @@ def read_input(fname):
             elif line.startswith('save'):
                 if not options['save_from_command_line']:
                     options['save'] = int(line.split()[1])
+            elif line.startswith('plot'):
+                options['plot'] = int(line.split()[1])            
             elif line.startswith('write_ts_values'):
                 options['write_ts_values'] = int(line.split()[1])
             elif line.startswith('write_well_values'):
@@ -483,12 +487,8 @@ def read_input(fname):
                 options['linear_lines'] = int(line.split()[1])
             elif line.startswith('graph_edge_color'):
                 options['graph_edge_color'] = str(line.split()[1])
-            elif line.startswith('plot'):
-                options['plot'] = int(line.split()[1])
             elif line.startswith('reso_2d'):
                 options['reso_2d'] = int(line.split()[1])
-            elif line.startswith('lw'):
-                options['lw'] = float(line.split()[1])
             elif line.startswith('path_report'):
                 options['path_report'].append(tuple(str(i) 
                                                     for i in line.split()[1:]))
