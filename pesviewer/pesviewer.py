@@ -6,7 +6,7 @@ import sys
 import math
 
 import matplotlib
-# matplotlib.use('TkAgg')
+matplotlib.use('TkAgg')
 from matplotlib import pylab as plt  # translate into pyplot.
 import matplotlib.image as mpimg
 import numpy as np
@@ -725,7 +725,7 @@ def get_sizes():
 # end def
 
 
-def plot(mep=None):
+def plot():
     """Plotter method takes all the lines and plots them in one graph"""
     global xlow, xhigh, xmargin, ylow, yhigh, ymargin, xlen
 
@@ -776,35 +776,12 @@ def plot(mep=None):
             imgsd[s] = im
         # end if
     
-    if mep:
-        plot_tss, plot_bless, plot_wells, plot_bimols = [], [], [], []
-        for rxn in mep['rxns']:
-            if rxn in tss:
-                plot_tss.append(rxn)
-            elif rxn in barrierlesss:
-                plot_bless.append(rxn)
-        for well in wells:
-            if well.name in mep['species']:
-                plot_wells.append(well)
-        for bimol in bimolecs:
-            if bimol.name in mep['species']:
-                plot_bimols.append(bimol)
-        plot_name = mep['species'][0] + '_' + mep['species'][-1]
-    else:
-        plot_tss = tss
-        plot_bless = barrierlesss
-        plot_wells = wells
-        plot_bimols = bimolecs
-        plot_name = options['id']
-    
-    read_im_extent(plot_name)                
-
     lines = []
-    for t in plot_tss:
+    for t in tss:
         lines.append(t.lines[0])
         lines.append(t.lines[1])
     # end for
-    for b in plot_bless:
+    for b in barrierlesss:
         lines.append(b.line)
     # end for
     get_sizes()
@@ -823,18 +800,18 @@ def plot(mep=None):
     ax.set_xticklabels([])
 
     if options['show_images']:
-        for w in plot_wells:
+        for w in wells:
             showimage(w)
         # end for
-        for b in plot_bimols:
+        for b in bimolecs:
             showimage(b)
         # end for
-    save_im_extent(plot_name)  # save the positions of the images to a file
+    save_im_extent()  # save the positions of the images to a file
     
     # draw the lines
     # in case of linear lines, calculate the distance of the horizontal pieces
     if options['linear_lines']:
-        xlen = (len(plot_wells) + len(plot_bimols)) / (4 * (xhigh - xlow))
+        xlen = (len(wells) + len(bimolecs)) / (4 * (xhigh - xlow))
     
     for line in lines:
         lw = options['lw']
@@ -898,7 +875,7 @@ def plot(mep=None):
     ax.set_ylim([ylow-ymargin, yhigh+ymargin])
 
     # write the name and energies to the plot
-    for w in plot_wells:
+    for w in wells:
         if options['write_well_values']:
             t = ax.text(w.x,
                         w.y-ymargin/10,
@@ -911,7 +888,7 @@ def plot(mep=None):
             textd[w] = t
         # end if
     # end for
-    for b in plot_bimols:
+    for b in bimolecs:
         if options['write_well_values']:
             # write the text values below the line:
             t = ax.text(b.x,
@@ -926,7 +903,7 @@ def plot(mep=None):
             textd[b] = t
         # end if
     # end for
-    for t in plot_tss:
+    for t in tss:
         if options['write_ts_values']:
             color = t.color
             if options['ts_color'] != 'none':
@@ -951,11 +928,7 @@ def plot(mep=None):
         plt.title('Potential energy surface of {id}'.format(id=options['id']))
     plt.ylabel('Energy ({units})'.format(units=options['units']))
     if options['save']:
-        if mep:
-            name = mep['species'][0] + '_' + mep['species'][-1]
-        else:
-            name = options['id']
-        plt.savefig(f'{name}_pes_plot.png', bbox_inches='tight')
+        plt.savefig(f'{options["id"]}_pes_plot.png', bbox_inches='tight')
     else:
         plt.show()
 # end def
@@ -1349,9 +1322,9 @@ def save_x_values():
 # end def
 
 
-def save_im_extent(name):
+def save_im_extent():
     """Save the x values of the stationary points to an external file"""
-    fi = open(f'{name}_im_extent.txt', 'w')
+    fi = open(f'{options["id"]}_im_extent.txt', 'w')
     for key in imgsd:
         e = imgsd[key].get_extent()
         vals = '{:.2f} {:.2f} {:.2f} {:.2f}'.format(e[0], e[1], e[2], e[3])
@@ -1360,9 +1333,9 @@ def save_im_extent(name):
 # end def
 
 
-def read_im_extent(name):
+def read_im_extent():
     """Read the extents of the images if they are present in a file_name."""
-    fname = f'{name}_im_extent.txt'
+    fname = f'{options["id"]}_im_extent.txt'
     if os.path.exists(fname):
         fi = open(fname, 'r')
         a = fi.read()
@@ -1587,7 +1560,7 @@ def main():
     for b in barrierlesss:
         linesd[b] = []
     # end for
-    read_im_extent(options['id'])  # read the position of the images, if known
+    read_im_extent()  # read the position of the images, if known
     position()  # find initial positions for all the species on the graph
     generate_lines()  # generate all the line
     # generate 2d depiction from the smiles or 3D structure,
@@ -1596,9 +1569,11 @@ def main():
     graph = gen_graph()
     meps = find_mep(graph, user_input)
     if options['plot']:
-        for mep in meps:
-            plot(mep)
         plot()
+        if meps:
+            print('To draw 2D plots for the individual MEPs type:')
+            for mep in meps:
+                print(f'\tpesviewer {mep["species"][0]}_{mep["species"][-1]}.inp')
     create_interactive_graph(meps)
 # end def
 
