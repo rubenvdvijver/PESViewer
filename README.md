@@ -78,7 +78,7 @@ The plotting options (to be written in the input file) are listed here.
 | `interpolation` | `hanning` | image interpolation method. | T |
 | `graph_edge_color` | `black` | color of the graph edges, if set to `energy`, color is scaled accordingly. | G |
 | `reso_2D` | `1` | enable (1) or disable (0) generation of 2D depictions for resonant structures. Additional images, one for each resonant structure named `_X` are generated under the `_2d` directory. | TG |
-| `path_report` | `[]` | Compute the MEP between two species. | TG |
+| `path_report` | `[]` | Compute the MEP between two species. Format: `chemid_start chemid_end` | TG |
 | `search_cutoff` | `10` | Maximum length (in reactive steps) to search for of the path report. | TG |
 | `node_size_diff` | `0` | Size difference of nodes in the graph depiction based on to their stability. More stable nodes are larger. 0 to make all nodes the same size. Reasonable values: 20-40.| G |
 
