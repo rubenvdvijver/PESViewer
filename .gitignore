@@ -4,3 +4,4 @@ dist
 __pycache__
 PESViewer.egg-info
 .vscode
+.DS_store
