@@ -945,6 +945,7 @@ def generate_2d_depiction():
     This is only done for the wells and bimolecular products,
     2D of tss need to be supplied by the user
     """
+    from PIL import Image
     try:
         from rdkit.Chem import Draw, AllChem
         from rdkit.Chem.Draw.cairoCanvas import Canvas
@@ -1030,7 +1031,7 @@ def generate_2d_depiction():
                 f.write('\n')
 
     def generate_2d(m, smis):
-        from PIL import Image
+        
         png_filename = '{id}_2d/{name}_2d{confid}.png'
         if len(smis) == 0:
             print('Could not generate 2d for {name}'.format(name=m.name))
@@ -1100,6 +1101,16 @@ def generate_2d_depiction():
                 drawer = Draw.MolDrawing(canvas=canvas, drawingOptions=opts)
                 drawer.AddMol(mol)
                 canvas.flush()
+
+                # Convert each white pixel to transparent.
+                pixels = img.getdata()
+                new_pixels = []
+                for pix in pixels:
+                    if pix == (255, 255, 255, 255):
+                        new_pixels.append((255, 255, 255, 0))
+                    else:
+                        new_pixels.append(pix)
+                img.putdata(new_pixels)
 
                 if i == 0:
                     img.save(png_filename.format(id=options['id'], name=m.name,
