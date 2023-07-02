@@ -231,7 +231,7 @@ class well:
     # Well class, contains the name, smiles and energy of a well
     def __init__(self, name, energy, smi=None):
         self.name = name
-        self.energy = energy
+        self.energy = convert_units(energy)
         self.smi = smi
         self.x = 0.
         self.y = 0.
@@ -248,7 +248,7 @@ class bimolec:
     # both smiles and energy of a bimolecular product
     def __init__(self, name, energy, smi=None):
         self.name = name
-        self.energy = energy
+        self.energy = convert_units(energy)
         if smi is None:
             self.smi = []
         else:
@@ -276,7 +276,7 @@ class ts:
     """
     def __init__(self, name, names, energy, col='black'):
         self.name = name
-        self.energy = energy
+        self.energy = convert_units(energy)
         self.color = col
         self.xyz_files = []
         fn = 'xyz/{name}.xyz'.format(name=name)
@@ -329,7 +329,7 @@ class barrierless:
         if self.product is None:
             e = exceptions.not_recognized('product', names[1], name)
             raise Exception(e)
-        self.energy = self.product.energy
+        self.energy = convert_units(self.product.energy)
         self.line = None
     # end def
 # end class
@@ -384,6 +384,8 @@ def read_input(fname):
     options['title'] = 1
     # default units
     options['units'] = 'kJ/mol'
+    # units to display the results, defaults to whatever is set in units
+    options['display_units'] = None
     # use xyz by default, put 0  to switch off
     options['use_xyz'] = 1
     # no rescale as default, put the well or
@@ -444,6 +446,8 @@ def read_input(fname):
                 options['title'] = int(line.split()[1])
             elif line.startswith('units'):
                 options['units'] = line.split()[1]
+            elif line.startswith('display_units'):
+                options['display_units'] = line.split()[1]
             elif line.startswith('use_xyz'):
                 options['use_xyz'] = int(line.split()[1])
             elif line.startswith('rescale'):
@@ -510,6 +514,9 @@ def read_input(fname):
         print('Warning, the input file arcitecture has changed,' +
               'use an "options" input tag to put all the options')
     # end if
+
+    if options['display_units'] is None:
+        options['display_units'] = options['units']
 
     for w in input_dict['wells']:
         w = w.split()
@@ -930,7 +937,8 @@ def plot():
 
     if options['title']:
         plt.title('Potential energy surface of {id}'.format(id=options['id']))
-    plt.ylabel('Energy ({units})'.format(units=options['units']))
+    # defualts to units if not specified
+    plt.ylabel('Energy ({display_units})'.format(display_units=options['display_units']))
     if options['save']:
         plt.savefig(f'{options["id"]}_pes_plot.png', bbox_inches='tight')
     else:
@@ -1365,6 +1373,23 @@ def read_im_extent():
     # end if
 # end def
 
+def convert_units(energy):
+    """Converts energy from 'units' to 'display_units'"""
+    # convert to kJ/mol first
+    if options['units'] == 'kcal/mol':
+        energy = energy * 4.184
+    elif options['units'] == 'eV':
+        energy = energy * 96.4852912
+    elif options['units'] == 'Hartree':
+        energy = energy * 2625.498413
+    # convert to display_units
+    if options['display_units'] == 'kcal/mol':
+        energy = energy / 4.184
+    elif options['display_units'] == 'eV':
+        energy = energy / 96.4852912
+    elif options['display_units'] == 'Hartree':
+        energy = energy / 2625.498413
+    return energy
 
 def create_interactive_graph(meps):
     """Create an interactive graph with pyvis."""
