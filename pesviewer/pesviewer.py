@@ -1437,7 +1437,7 @@ def create_interactive_graph(meps):
         else:  
             color = ts.color
         g.add_edge(ts.reactant.name, ts.product.name,
-                   title=f'{round(ts.energy - base_energy, 1)} kcal/mol',
+                   title=f'{round(ts.energy - base_energy, 1)} {options["display_units"]}',
                    color={"highlight": "#FF00FF", 'color': color}, 
                    width=(1 - norm_energy) * 20 + 1)
 
@@ -1449,7 +1449,7 @@ def create_interactive_graph(meps):
         else:  
             color = bless.color
         g.add_edge(bless.reactant.name, bless.product.name, 
-                   title=f'{round(bless.product.energy - base_energy, 1)} kcal/mol', 
+                   title=f'{round(bless.product.energy - base_energy, 1)} {options["display_units"]}', 
                    color={"highlight": "#FF00FF", 'color': color},
                    width=(1 - norm_energy) * 20 + 1)
 
@@ -1565,7 +1565,7 @@ def find_mep(graph, user_input):
 
         print(f'The bottle neck barrier between {spec_1} and {spec_2} with a ' \
               f'{options["search_cutoff"]} depth search is {max_barr} ' \
-              'kcal/mol high.')
+              '{options["display_units"]} high.')
 
         # write new pesviewer input for just this path
         input_lines = user_input.split('\n')
