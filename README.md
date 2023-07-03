@@ -54,7 +54,8 @@ The plotting options (to be written in the input file) are listed here.
 | option | default | Description | Scope* |
 | ------- | ------- | ------- | ------- |
 | `title` | `0` | print a title (1) or not (0) on the PES. | T |
-| `units` | `kcal/mol` | energy units. | TG | 
+| `units` | `kJ/mol` | energy units in the input file. | TG | 
+| `display_units` | same as the units of `units`  | energy units to be displayed. Allowed values: `kJ/mol`, `kcal/mol`, `eV` | TG | 
 | `use_xyz` | `1` | use xyz files to generate each species 2D depiction. The `*.xyz` files should be named the same as the name specified in the relevant line and placed inside a directory called `xyz` (0 switch it off). | TG | 
 | `rescale` | `0` | which species is used to rescale all energies, the name of the relevant well or bimolecular species is needed. | TG |
 | `fh` | `9.` | figure height. | T | 
