@@ -718,12 +718,16 @@ def get_sizes():
         xhigh = max(max([w.x for w in wells]), max([b.x for b in bimolecs]))
         # all tss lie above the lowest well
         ylow = min(min([w.y for w in wells]), min([b.y for b in bimolecs]))
+        ylow = convert_units(ylow)
+        yhigh = convert_units(yhigh)
     else:
         # x coords of tss are always inbetween stable species
         xlow = min([w.x for w in wells])
         xhigh = max([w.x for w in wells])
         # all tss lie above the lowest well
         ylow = min([w.y for w in wells])
+        ylow = convert_units(ylow)
+        yhigh = convert_units(yhigh)
     xmargin = options['margin']*(xhigh-xlow)
     try:
         yhigh = max([t.y for t in tss])
