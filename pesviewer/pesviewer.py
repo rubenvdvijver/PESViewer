@@ -733,8 +733,8 @@ def get_sizes():
     if len(bimolecs) > 0:
         yhigh = max(yhigh, max([b.y for b in bimolecs]))
     ymargin = options['margin']*(yhigh-ylow)
-    ylow = convert_units(ylow)
-    yhigh = convert_units(yhigh)
+    #ylow = convert_units(ylow)
+    #yhigh = convert_units(yhigh)
 # end def
 
 
