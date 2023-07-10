@@ -729,12 +729,10 @@ def get_sizes():
         yhigh = max([t.y for t in tss])
     except ValueError:
         yhigh = max([b.y for b in bimolecs])
-    yhigh = max(yhigh, max([w.x for w in wells]))
+    yhigh = max(yhigh, max([w.y for w in wells]))
     if len(bimolecs) > 0:
         yhigh = max(yhigh, max([b.y for b in bimolecs]))
     ymargin = options['margin']*(yhigh-ylow)
-    #ylow = convert_units(ylow)
-    #yhigh = convert_units(yhigh)
 # end def
 
 
