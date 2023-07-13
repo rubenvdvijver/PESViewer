@@ -13,10 +13,11 @@ import numpy as np
 import numpy.linalg as la
 try:
     from rdkit import Chem
-    from rdkit.Chem import Draw
-    from rdkit.Chem import AllChem
-except ImportError:
-    print("Could not import rdkit, the code will likely not work.")
+    from rdkit.Chem import Draw, AllChem
+    from rdkit.Chem.Draw.cairoCanvas import Canvas
+except (ImportError, ModuleNotFoundError):
+    print('Warning: Unable to import rdkit. Using openbabel as fallback '
+          'low quality option.')
 try:
     import pybel
     pybel.ob.obErrorLog.SetOutputLevel(0)
@@ -26,6 +27,9 @@ except (ImportError, ModuleNotFoundError):
         pybel.ob.obErrorLog.SetOutputLevel(0)
     except (ImportError, ModuleNotFoundError):
         print("Could not import pybel, the code will likely not work.")
+from PIL import Image
+
+from pesviewer.gen_resonant_structs import gen_reso_structs
 
 # contains all the options for this PES
 options = {}
@@ -953,15 +957,6 @@ def generate_2d_depiction():
     This is only done for the wells and bimolecular products,
     2D of tss need to be supplied by the user
     """
-    from PIL import Image
-    try:
-        from rdkit.Chem import Draw, AllChem
-        from rdkit.Chem.Draw.cairoCanvas import Canvas
-        from pesviewer.gen_resonant_structs import gen_reso_structs
-    except (ImportError, ModuleNotFoundError):
-        print('Warning: Unable to import rdkit. Using openbabel as fallback '
-              'low quality option.')
-
     def get_smis(m, smis, files):
         # name and path of png file
         if len(smis) > 0:
@@ -1390,6 +1385,7 @@ def convert_units(energy):
     elif options['display_units'] == 'Hartree':
         energy = energy / 2625.498413
     return energy
+
 
 def create_interactive_graph(meps):
     """Create an interactive graph with pyvis."""
