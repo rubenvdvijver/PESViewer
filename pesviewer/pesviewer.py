@@ -1575,33 +1575,32 @@ def find_mep(graph, user_input):
     return meps
 
 
-def main():
+def main(fname=None):
     """Main method to run the PESViewer"""
-    if len(sys.argv) > 1:  # read the arguments
+    if fname is None and len(sys.argv) > 1:
         fname = sys.argv[1]
         options['save'] = 0
         options['save_from_command_line'] = 0
         if len(sys.argv) > 2 and sys.argv[2] == 'save':  # Save the plot.
             options['save'] = 1
             options['save_from_command_line'] = 1
-    elif len(sys.argv) == 1:
+    elif fname is None and len(sys.argv) == 1:
         print('To use the pesviewer, supply an input file as argument.')
         sys.exit(-1)
-    # end if
     user_input = read_input(fname)  # read the input file
     # initialize the dictionaries
     for w in wells:
         linesd[w] = []
-    # end for
+    
     for b in bimolecs:
         linesd[b] = []
-    # end for
+    
     for t in tss:
         linesd[t] = []
-    # end for
+    
     for b in barrierlesss:
         linesd[b] = []
-    # end for
+    
     read_im_extent()  # read the position of the images, if known
     position()  # find initial positions for all the species on the graph
     generate_lines()  # generate all the line
