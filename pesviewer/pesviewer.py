@@ -1616,7 +1616,12 @@ def main(fname=None):
             for mep in meps:
                 print(f'\tpesviewer {mep["species"][0]}_{mep["species"][-1]}.inp')
     create_interactive_graph(meps)
-# end def
+
+
+def pesviewer(fname=None):
+    options['save'] = 0
+    options['save_from_command_line'] = 0
+    main(fname)
 
 
 if __name__ == "__main__":
