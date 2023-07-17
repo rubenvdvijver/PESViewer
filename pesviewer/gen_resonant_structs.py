@@ -1,5 +1,12 @@
+import sys
+import itertools
+from copy import deepcopy
+
 import rdkit
 from rdkit import Chem
+from rdkit.Chem import Draw
+from rdkit.Chem.rdchem import BondType
+from rdkit import rdBase, RDLogger
 
 
 def num_rad_elecs(molec: rdkit.Chem.Mol) -> int:
@@ -22,7 +29,6 @@ def gen_bond_combs(n_bonds: int, n_conns: int) -> list:
     the combinations has to be equal to n_bonds. This accepts configurations
     breaking the octet.
     """
-    import itertools
     iters = [[1, 2, 3]] * n_conns
     combs = []
     for comb in itertools.product(*iters):
@@ -38,9 +44,6 @@ def filter_valid_structs(mol: rdkit.Chem.Mol, combs: list, hvy_bond_ids: list) -
     @param combs: Possible combinations of bond configuration for the molecule.
     @param hvy_bond_ids: List of bonds connecting non-H atoms (C-C, C-O, etc.)
     """
-    from copy import deepcopy
-    from rdkit.Chem.rdchem import BondType
-    from rdkit import rdBase, RDLogger
     # Disable logging
     logger = RDLogger.logger()
     logger.setLevel(RDLogger.ERROR)
@@ -136,8 +139,6 @@ def gen_reso_structs(smi: str, min_rads=True) -> list:  # C(=C\\1/[C]C1)\\[CH2]
 
 
 if __name__ == '__main__':
-    import sys
-    from rdkit.Chem import Draw
     smiles = sys.argv[1]
     valid_strs = gen_reso_structs(smiles)
     for j, m in enumerate(valid_strs):

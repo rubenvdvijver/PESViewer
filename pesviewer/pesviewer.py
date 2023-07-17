@@ -11,26 +11,17 @@ from matplotlib import pylab as plt  # translate into pyplot.
 import matplotlib.image as mpimg
 import numpy as np
 import numpy.linalg as la
-try:
-    from rdkit import Chem
-    from rdkit.Chem import Draw, AllChem
-    from rdkit.Chem.Draw.cairoCanvas import Canvas
-except (ImportError, ModuleNotFoundError):
-    print('Warning: Unable to import rdkit. Using openbabel as fallback '
-          'low quality option.')
-try:
-    import pybel
-    pybel.ob.obErrorLog.SetOutputLevel(0)
-except (ImportError, ModuleNotFoundError):
-    try:
-        from openbabel import pybel
-        pybel.ob.obErrorLog.SetOutputLevel(0)
-    except (ImportError, ModuleNotFoundError):
-        print("Could not import pybel, the code will likely not work.")
+from rdkit import Chem
+from rdkit.Chem import Draw, AllChem
+from rdkit.Chem.Draw.cairoCanvas import Canvas
+from openbabel import pybel
 from PIL import Image
+import networkx as nx
+from pyvis import network as net
 
 from pesviewer.gen_resonant_structs import gen_reso_structs
 
+pybel.ob.obErrorLog.SetOutputLevel(0)
 # contains all the options for this PES
 options = {}
 
@@ -1389,11 +1380,6 @@ def convert_units(energy):
 
 def create_interactive_graph(meps):
     """Create an interactive graph with pyvis."""
-    try:
-        from pyvis import network as net
-    except ImportError:
-        print('pyvis cannot be imported, no interactive graph is made.')
-        return
     
     g = net.Network(height='1000px', width='90%', heading='')
 
@@ -1504,7 +1490,6 @@ def gen_graph():
     Returns:
         networkx.Graph: A Graph object representation of the PES.
     """
-    import networkx as nx
     graph = nx.Graph()
     base_energy = next((species.energy for species in wells + bimolecs 
                         if species.name == options['rescale']), 0)
@@ -1529,7 +1514,6 @@ def find_mep(graph, user_input):
     Returns:
         NoneType: None
     """
-    import networkx as nx
     meps = []
     for species_pair in options['path_report']:
         meps.append({})
