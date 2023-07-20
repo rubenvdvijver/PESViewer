@@ -6,7 +6,7 @@ package:
     version: {{ version }}
 
 source:
-    url: https://github.com/zadorlab/PESViewer/archive/refs/tags/{{ version }}.tar.gz
+    url: https://github.com/zadorlab/PESViewer/archive/{{ version }}.tar.gz
     sha256: a477b43ba736e72f92ec26b6e1efe13dd405df8cf40409c3f6b76870728a7cae
 
 build:
@@ -31,14 +31,14 @@ requirements:
 
 test:
     imports:
-        - kinbot
+        - pesviewer
     commands:
         - pip check
     requires:
         - pip
        
 about:
-    home: https://github.com/rubenvdvijver/PESViewer
+    home: https://github.com/zadorlab/PESViewer
     license: MIT
     license_family: MIT
     license_file: LICENSE
@@ -53,5 +53,6 @@ about:
 
 extra:
     recipe-maintainers:
-        - juditzador
         - cmartia
+        - juditzador
+        - rubenvdvijver
