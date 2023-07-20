@@ -7,7 +7,7 @@ exclude = ["build", "dist", ".idea", ".vscode", "PESViewer.egg-info"]
 
 [project]
 name = "pesviewer"
-version = "1.0.0"
+version = "1.1.0"
 description = "Potential Energy Surface Visualizer"
 readme = "README.md"
 requires-python = ">=3.6.0"
@@ -48,7 +48,7 @@ dependencies = [
 
 [project.urls]
 homepage = "https://github.com/zadorlab/PESViewer"
-documentation = "https://github.com/zadorlab/PESViewer"
+documentation = "https://github.com/zadorlab/PESViewer/wiki"
 
 [project.scripts]
 pesviewer = "pesviewer.pesviewer:main"
