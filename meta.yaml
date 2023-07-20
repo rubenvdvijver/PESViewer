@@ -1,19 +1,25 @@
-# cmd: conda build . -c LCT -c rdkit -c openbabel
+{% set name = "pesviewer" %}
+{% set version = "1.1.0" %}
+
 package:
-    name: pesviewer
-    version: "1.0"
+    name: {{ name|lower }}
+    version: {{ version }}
 
 source:
-    path: .
+    url: https://github.com/zadorlab/PESViewer/archive/refs/tags/{{ version }}.tar.gz
+    sha256: a477b43ba736e72f92ec26b6e1efe13dd405df8cf40409c3f6b76870728a7cae
+
+build:
+    noarch: python
+    script: {{ PYTHON }} -m pip install . -vv
+    number: 0
+    entry_points:
+        - pesviewer = pesviewer.pesviewer:main
 
 requirements:
-    build:
+    host:
         - python
-        - numpy
-        - matplotlib
-        - pillow
-        - rdkit
-        - openbabel
+        - pip
     run:
         - python
         - numpy
@@ -21,7 +27,31 @@ requirements:
         - pillow
         - rdkit
         - openbabel
+
+
+test:
+    imports:
+        - kinbot
+    commands:
+        - pip check
+    requires:
+        - pip
        
 about:
     home: https://github.com/rubenvdvijver/PESViewer
     license: MIT
+    license_family: MIT
+    license_file: LICENSE
+    summary: "Potential Energy Surface Visualizer"
+
+    description: |
+        PESViewer is a code to depict and analyze a potential energy surface 
+        characterized by wells, bimolecular products, transition states and 
+        barrierless reactions.
+    doc_url: https://github.com/zadorlab/PESViewer/wiki
+    dev_url: https://github.com/zadorlab/PESViewer
+
+extra:
+    recipe-maintainers:
+        - juditzador
+        - cmartia
