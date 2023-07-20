@@ -39,8 +39,6 @@ classifiers = [
 dependencies = [
         "numpy>=1.17.0",
         "matplotlib",
-        "rdkit",
-        "openbabel",
         "networkx",
         "pillow",
         "pyvis",
