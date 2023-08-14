@@ -1395,12 +1395,18 @@ def create_interactive_graph(meps):
         g.add_node(well.name, label=str(round(well.energy - base_energy, 1)),
                    borderWidth=3, title=f'{well.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{well.name}_2d.png', size=size,
-                   font='30', color={'highlight': '#FF00FF', 'border': 'black'})
+                   font='30', color={'background': '#FFFFFF', 
+                                     'border': 'black',
+                                     'highlight': {'border': '#FF00FF', 
+                                                   'background': '#FFFFFF'}})
     for bim in bimolecs:
         g.add_node(bim.name, label=str(round(bim.energy - base_energy, 1)),
                    borderWidth=3, title=f'{bim.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80,
-                   font='30', color={'highlight': '#FF00FF', 'border': 'blue'})
+                   font='30', color={'background': '#FFFFFF', 
+                                     'border': 'blue',
+                                     'highlight': {'border': '#FF00FF', 
+                                                   'background': '#FFFFFF'}})
 
     min_ts_energy = min([ts.energy for ts in tss])
     max_ts_energy = max([ts.energy for ts in tss])
