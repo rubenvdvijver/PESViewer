@@ -427,7 +427,7 @@ def read_input(fname):
     # graphs edge color, if set to 'energy', will be colored by that
     options['graph_edge_color'] = 'black'
     # enable/disable generation of 2D depictions for resonant structures.
-    options['reso_2d'] = 1
+    options['reso_2d'] = 0
     # print report on paths connecting two species. Replace 0 with the two species names if to be activated.
     options['path_report'] = []
     # depth of search
