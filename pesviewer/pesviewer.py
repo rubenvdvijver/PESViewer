@@ -11,22 +11,17 @@ from matplotlib import pylab as plt  # translate into pyplot.
 import matplotlib.image as mpimg
 import numpy as np
 import numpy.linalg as la
-try:
-    from rdkit import Chem
-    from rdkit.Chem import Draw
-    from rdkit.Chem import AllChem
-except ImportError:
-    print("Could not import rdkit, the code will likely not work.")
-try:
-    import pybel
-    pybel.ob.obErrorLog.SetOutputLevel(0)
-except (ImportError, ModuleNotFoundError):
-    try:
-        from openbabel import pybel
-        pybel.ob.obErrorLog.SetOutputLevel(0)
-    except (ImportError, ModuleNotFoundError):
-        print("Could not import pybel, the code will likely not work.")
+from rdkit import Chem
+from rdkit.Chem import Draw, AllChem
+from rdkit.Chem.Draw.cairoCanvas import Canvas
+from openbabel import pybel
+from PIL import Image
+import networkx as nx
+from pyvis import network as net
 
+from pesviewer.gen_resonant_structs import gen_reso_structs
+
+pybel.ob.obErrorLog.SetOutputLevel(0)
 # contains all the options for this PES
 options = {}
 
@@ -434,7 +429,7 @@ def read_input(fname):
     # graphs edge color, if set to 'energy', will be colored by that
     options['graph_edge_color'] = 'black'
     # enable/disable generation of 2D depictions for resonant structures.
-    options['reso_2d'] = 1
+    options['reso_2d'] = 0
     # print report on paths connecting two species. Replace 0 with the two species names if to be activated.
     options['path_report'] = []
     # depth of search
@@ -955,15 +950,6 @@ def generate_2d_depiction():
     This is only done for the wells and bimolecular products,
     2D of tss need to be supplied by the user
     """
-    from PIL import Image
-    try:
-        from rdkit.Chem import Draw, AllChem
-        from rdkit.Chem.Draw.cairoCanvas import Canvas
-        from pesviewer.gen_resonant_structs import gen_reso_structs
-    except (ImportError, ModuleNotFoundError):
-        print('Warning: Unable to import rdkit. Using openbabel as fallback '
-              'low quality option.')
-
     def get_smis(m, smis, files):
         # name and path of png file
         if len(smis) > 0:
@@ -1393,13 +1379,9 @@ def convert_units(energy):
         energy = energy / 2625.498413
     return energy
 
+
 def create_interactive_graph(meps):
     """Create an interactive graph with pyvis."""
-    try:
-        from pyvis import network as net
-    except ImportError:
-        print('pyvis cannot be imported, no interactive graph is made.')
-        return
     
     g = net.Network(height='1000px', width='90%', heading='')
 
@@ -1415,12 +1397,18 @@ def create_interactive_graph(meps):
         g.add_node(well.name, label=str(round(well.energy - base_energy, options['rounding'])),
                    borderWidth=3, title=f'{well.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{well.name}_2d.png', size=size,
-                   font='30', color={'highlight': '#FF00FF', 'border': 'black'})
+                   font='30', color={'background': '#FFFFFF', 
+                                     'border': 'black',
+                                     'highlight': {'border': '#FF00FF', 
+                                                   'background': '#FFFFFF'}})
     for bim in bimolecs:
         g.add_node(bim.name, label=str(round(bim.energy - base_energy, options['rounding'])),
                    borderWidth=3, title=f'{bim.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80,
-                   font='30', color={'highlight': '#FF00FF', 'border': 'blue'})
+                   font='30', color={'background': '#FFFFFF', 
+                                     'border': 'blue',
+                                     'highlight': {'border': '#FF00FF', 
+                                                   'background': '#FFFFFF'}})
 
     min_ts_energy = min([ts.energy for ts in tss])
     max_ts_energy = max([ts.energy for ts in tss])
@@ -1510,7 +1498,6 @@ def gen_graph():
     Returns:
         networkx.Graph: A Graph object representation of the PES.
     """
-    import networkx as nx
     graph = nx.Graph()
     base_energy = next((species.energy for species in wells + bimolecs 
                         if species.name == options['rescale']), 0)
@@ -1535,7 +1522,6 @@ def find_mep(graph, user_input):
     Returns:
         NoneType: None
     """
-    import networkx as nx
     meps = []
     for species_pair in options['path_report']:
         meps.append({})
@@ -1581,33 +1567,32 @@ def find_mep(graph, user_input):
     return meps
 
 
-def main():
+def main(fname=None):
     """Main method to run the PESViewer"""
-    if len(sys.argv) > 1:  # read the arguments
+    if fname is None and len(sys.argv) > 1:
         fname = sys.argv[1]
         options['save'] = 0
         options['save_from_command_line'] = 0
         if len(sys.argv) > 2 and sys.argv[2] == 'save':  # Save the plot.
             options['save'] = 1
             options['save_from_command_line'] = 1
-    elif len(sys.argv) == 1:
+    elif fname is None and len(sys.argv) == 1:
         print('To use the pesviewer, supply an input file as argument.')
         sys.exit(-1)
-    # end if
     user_input = read_input(fname)  # read the input file
     # initialize the dictionaries
     for w in wells:
         linesd[w] = []
-    # end for
+    
     for b in bimolecs:
         linesd[b] = []
-    # end for
+    
     for t in tss:
         linesd[t] = []
-    # end for
+    
     for b in barrierlesss:
         linesd[b] = []
-    # end for
+    
     read_im_extent()  # read the position of the images, if known
     position()  # find initial positions for all the species on the graph
     generate_lines()  # generate all the line
@@ -1623,7 +1608,12 @@ def main():
             for mep in meps:
                 print(f'\tpesviewer {mep["species"][0]}_{mep["species"][-1]}.inp')
     create_interactive_graph(meps)
-# end def
+
+
+def pesviewer(fname=None):
+    options['save'] = 0
+    options['save_from_command_line'] = 0
+    main(fname)
 
 
 if __name__ == "__main__":
