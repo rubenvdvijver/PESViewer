@@ -15,12 +15,29 @@ To run PESViewer, you need python >= 3.7, matplotlib, numpy and OpenBabel or RDK
 
 While the code can be used as a standalone application, it is designed to work with KinBot, which automatically generates the input files for PESViewer.
 
-## INSTALL
+## How to Install
 
-Clone the project onto your machine and go to the PESViewer directory. There, type the following commands:
+PESViewer can be installed both in two different ways, from the conda-forge repo (`conda install`) or by cloning this github repo and then install it locally.
 
-    python setup.py build
-    python setup.py install 
+### conda-forge
+
+    conda install -c conda-forge pesviewer
+
+### From Github
+
+If you want to have the very last version of PESViewer without waiting for a 
+release or you want to modify PESViewer acccording to your needs you can clone the project 
+from github:
+
+    git clone git@github.com:zadorlab/PESViewer.git
+
+and then, from within the PESViewer directory produced after cloning, type:
+
+    pip install -e .
+ 
+> **Note**
+> If you want to modify PESViewer yourself it's better to fork the project 
+> into your own repository and then clone it.
 
 ## INPUT
 
