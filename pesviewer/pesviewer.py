@@ -386,6 +386,8 @@ def read_input(fname):
     options['units'] = 'kJ/mol'
     # units to display the results, defaults to whatever is set in units
     options['display_units'] = None
+    # rounding of values on plot
+    options['rounding'] = 1
     # use xyz by default, put 0  to switch off
     options['use_xyz'] = 1
     # no rescale as default, put the well or
@@ -1410,12 +1412,12 @@ def create_interactive_graph(meps):
     for well in wells:
         norm_energy = (well.energy - min_well_energy) / well_energy_range
         size = (1 - norm_energy) * options['node_size_diff'] + 80
-        g.add_node(well.name, label=str(round(well.energy - base_energy, 1)),
+        g.add_node(well.name, label=str(round(well.energy - base_energy, options['rounding'])),
                    borderWidth=3, title=f'{well.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{well.name}_2d.png', size=size,
                    font='30', color={'highlight': '#FF00FF', 'border': 'black'})
     for bim in bimolecs:
-        g.add_node(bim.name, label=str(round(bim.energy - base_energy, 1)),
+        g.add_node(bim.name, label=str(round(bim.energy - base_energy, options['rounding'])),
                    borderWidth=3, title=f'{bim.name}', shape='circularImage',
                    image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80,
                    font='30', color={'highlight': '#FF00FF', 'border': 'blue'})
@@ -1437,7 +1439,7 @@ def create_interactive_graph(meps):
         else:  
             color = ts.color
         g.add_edge(ts.reactant.name, ts.product.name,
-                   title=f'{round(ts.energy - base_energy, 1)} {options["display_units"]}',
+                   title=f'{round(ts.energy - base_energy, options["rounding"])} {options["display_units"]}',
                    color={"highlight": "#FF00FF", 'color': color}, 
                    width=(1 - norm_energy) * 20 + 1)
 
@@ -1449,7 +1451,7 @@ def create_interactive_graph(meps):
         else:  
             color = bless.color
         g.add_edge(bless.reactant.name, bless.product.name, 
-                   title=f'{round(bless.product.energy - base_energy, 1)} {options["display_units"]}', 
+                   title=f'{round(bless.product.energy - base_energy, options["rounding"])} {options["display_units"]}', 
                    color={"highlight": "#FF00FF", 'color': color},
                    width=(1 - norm_energy) * 20 + 1)
 
