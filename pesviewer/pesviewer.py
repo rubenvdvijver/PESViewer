@@ -445,6 +445,8 @@ def read_input(fname):
                 options['units'] = line.split()[1]
             elif line.startswith('display_units'):
                 options['display_units'] = line.split()[1]
+            elif line.startswith('rounding'):
+                options['rounding'] = int(line.split()[1])
             elif line.startswith('use_xyz'):
                 options['use_xyz'] = int(line.split()[1])
             elif line.startswith('rescale'):
@@ -887,7 +889,7 @@ def plot():
         if options['write_well_values']:
             t = ax.text(w.x,
                         w.y-ymargin/10,
-                        '{:.1f}'.format(w.y),
+                        '{:.{}f}'.format(w.y, options['rounding']),
                         fontdict={'size': options['text_size']},
                         ha='center', va='top',
                         color=options['well_color'],
@@ -901,7 +903,7 @@ def plot():
             # write the text values below the line:
             t = ax.text(b.x,
                         b.y-ymargin/10,
-                        '{:.1f}'.format(b.y),
+                        '{:.{}f}'.format(b.y, options['rounding']),
                         fontdict={'size': options['text_size']},
                         ha='center',
                         va='top',
@@ -918,7 +920,7 @@ def plot():
                 color = options['ts_color']
             te = ax.text(t.x,
                          t.y+ymargin/30,
-                         '{:.1f}'.format(t.y),
+                         '{:.{}f}'.format(t.y, options['rounding']),
                          fontdict={'size': options['text_size']},
                          ha='center',
                          va='bottom',
