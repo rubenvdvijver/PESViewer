@@ -383,6 +383,8 @@ def read_input(fname):
     options['display_units'] = None
     # rounding of values on plot
     options['rounding'] = 1
+    # shifting energies (in original units)
+    options['energy_shift'] = 0.
     # use xyz by default, put 0  to switch off
     options['use_xyz'] = 1
     # no rescale as default, put the well or
@@ -447,6 +449,8 @@ def read_input(fname):
                 options['display_units'] = line.split()[1]
             elif line.startswith('rounding'):
                 options['rounding'] = int(line.split()[1])
+            elif line.startswith('energy_shift'):
+                options['energy_shift'] = float(line.split()[1])
             elif line.startswith('use_xyz'):
                 options['use_xyz'] = int(line.split()[1])
             elif line.startswith('rescale'):
@@ -1364,7 +1368,9 @@ def read_im_extent():
 # end def
 
 def convert_units(energy):
-    """Converts energy from 'units' to 'display_units'"""
+    """Converts energy from 'units' to 'display_units' and apply 'energy_shift'"""
+    # apply shift in original units
+    energy += options['energy_shift']
     # convert to kJ/mol first
     if options['units'] == 'kcal/mol':
         energy = energy * 4.184
