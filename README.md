@@ -74,6 +74,7 @@ The plotting options (to be written in the input file) are listed here.
 | `units` | `kJ/mol` | energy units in the input file. | TG | 
 | `display_units` | same as the units of `units`  | energy units to be displayed. Allowed values: `kJ/mol`, `kcal/mol`, `eV` | TG | 
 | `rounding` | `1`  | number of decimals for the energy values | TG | 
+| `energy_shift` | `0.`  | shift energy scale by this amount measured in `units` | TG | 
 | `use_xyz` | `1` | use xyz files to generate each species 2D depiction. The `*.xyz` files should be named the same as the name specified in the relevant line and placed inside a directory called `xyz` (0 switch it off). | TG | 
 | `rescale` | `0` | which species is used to rescale all energies, the name of the relevant well or bimolecular species is needed. | TG |
 | `fh` | `9.` | figure height. | T | 
