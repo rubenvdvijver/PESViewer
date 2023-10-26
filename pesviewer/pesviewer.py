@@ -618,10 +618,16 @@ def position():
         list = (b.energy for b in bimolecs if b.name == options['rescale'])
         y0 = next(list, 0.)
     for w in wells:
-        w.y = w.energy - y0
+        if np.isnan(w.energy):
+            w.y = w.energy2 - y0
+        else:
+            w.y = w.energy - y0
     # end for
     for b in bimolecs:
-        b.y = b.energy - y0
+        if np.isnan(b.energy):
+            b.y = b.energy2 - y0
+        else:
+            b.y = b.energy - y0
     # end for
     for t in tss:
         t.y = t.energy - y0
