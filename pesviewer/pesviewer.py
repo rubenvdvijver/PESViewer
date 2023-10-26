@@ -1468,10 +1468,11 @@ def create_interactive_graph(meps):
             color = f'rgb({red},{green},{blue})'
         else:  
             color = ts.color
-        g.add_edge(ts.reactant.name, ts.product.name,
-                   title=f'{round(ts.energy - base_energy, options["rounding"])} {options["display_units"]}',
-                   color={"highlight": "#FF00FF", 'color': color}, 
-                   width=(1 - norm_energy) * 20 + 1)
+        rel_energy = round(ts.energy - base_energy, options["rounding"])
+        g.add_edge(ts.reactant.name, ts.product.name, 
+                   title=f'{rel_energy} {options["display_units"]}',
+                   color={'highlight': '#FF00FF', 'color': color}, 
+                   width=(1 - norm_energy) * 20 + 1, arrows='')
 
     for bless in barrierlesss:
         norm_energy = (bless.product.energy - min_ts_energy) / ts_energy_range
@@ -1480,10 +1481,11 @@ def create_interactive_graph(meps):
             color = f'rgb({red},{green},{blue})'
         else:  
             color = bless.color
+        rel_energy = round(bless.product.energy - base_energy, options["rounding"])
         g.add_edge(bless.reactant.name, bless.product.name, 
-                   title=f'{round(bless.product.energy - base_energy, options["rounding"])} {options["display_units"]}', 
+                   title=f'{rel_energy} {options["display_units"]}', 
                    color={"highlight": "#FF00FF", 'color': color},
-                   width=(1 - norm_energy) * 20 + 1)
+                   width=(1 - norm_energy) * 20 + 1, arrows='')
 
     g.set_edge_smooth('dynamic')
     g.show_buttons(filter_=['physics'])
