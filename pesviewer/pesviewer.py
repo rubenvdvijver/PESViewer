@@ -1569,7 +1569,7 @@ def find_mep(graph, user_input):
 
         print(f'The bottle neck barrier between {spec_1} and {spec_2} with a ' \
               f'{options["search_cutoff"]} depth search is {max_barr} ' \
-              '{options["display_units"]} high.')
+              f'{options["display_units"]} high.')
 
         # write new pesviewer input for just this path
         input_lines = user_input.split('\n')
