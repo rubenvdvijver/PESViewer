@@ -432,6 +432,8 @@ def read_input(fname):
     options['interpolation'] = 'hanning'
     # graphs edge color, if set to 'energy', will be colored by that
     options['graph_edge_color'] = 'black'
+    # graphs edge color, if set to 'energy', will be colored by that
+    options['graph_bimolec_color'] = 'blue'
     # enable/disable generation of 2D depictions for resonant structures.
     options['reso_2d'] = 0
     # print report on paths connecting two species. Replace 0 with the two species names if to be activated.
@@ -496,6 +498,8 @@ def read_input(fname):
                 options['linear_lines'] = int(line.split()[1])
             elif line.startswith('graph_edge_color'):
                 options['graph_edge_color'] = str(line.split()[1])
+            elif line.startswith('graph_bimolec_color'):
+                options['graph_bimolec_color'] = line.split()[1]
             elif line.startswith('reso_2d'):
                 options['reso_2d'] = int(line.split()[1])
             elif line.startswith('path_report'):
@@ -1427,13 +1431,13 @@ def create_interactive_graph(meps):
                    color={'background': '#FFFFFF', 'border': 'black',
                           'highlight': {'border': '#FF00FF', 'background': '#FFFFFF'}})
     for bim in bimolecs:
-        label = str(round(bim.energy - base_energy, options['rounding']))
+        border_color = options['graph_bimolec_color']
         if not bim.energy2 is None:
             label += f' {round(bim.energy2 - base_energy, options["rounding"])}'
         g.add_node(bim.name, label=label, borderWidth=3, title=f'{bim.name}', 
                    shape='circularImage', image=f'{options["id"]}_2d/{bim.name}_2d.png', 
                    size=80, font='30', 
-                   color={'background': '#FFFFFF', 'border': 'blue',
+                   color={'background': '#FFFFFF', 'border': border_color,
                           'highlight': {'border': '#FF00FF', 
                           'background': '#FFFFFF'}})
 
