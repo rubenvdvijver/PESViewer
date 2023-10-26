@@ -224,13 +224,14 @@ class line:
 
 class well:
     # Well class, contains the name, smiles and energy of a well
-    def __init__(self, name, energy, smi=None):
+    def __init__(self, name, energy, smi=None, energy2=None):
         self.name = name
         self.energy = convert_units(energy)
         self.smi = smi
         self.x = 0.
         self.y = 0.
         self.xyz_files = []
+        self.energy2 = energy2
         fn = 'xyz/{name}.xyz'.format(name=name)
         if os.path.exists(fn):
             self.xyz_files.append(fn)
@@ -241,7 +242,7 @@ class well:
 class bimolec:
     # Bimolec class, contains the name,
     # both smiles and energy of a bimolecular product
-    def __init__(self, name, energy, smi=None):
+    def __init__(self, name, energy, smi=None, energy2=None):
         self.name = name
         self.energy = convert_units(energy)
         if smi is None:
@@ -253,6 +254,7 @@ class bimolec:
         self.xyz_files = []
         # this bimolecular product is placed on the right side of the graph
         self.right = False
+        self.energy2 = energy2
         i = 1
         fn = 'xyz/{name}{i}.xyz'.format(name=name, i=i)
         while os.path.exists(fn):
@@ -524,22 +526,28 @@ def read_input(fname):
     for w in input_dict['wells']:
         w = w.split()
         name = w[0]
-        energy = eval(w[1])
+        energy = float(w[1])
         smi = None
         if len(w) > 2 and w[2] != '#':
-            smi = w[2]
+            try:
+                energy2 = float(w[2])
+            except ValueError:
+                smi = w[2]
         # end if
-        w = well(name, energy, smi)
+        w = well(name, energy, smi, energy2)
         wells.append(w)
     # end for
     for b in input_dict['bimolec']:
         b = b.split()
         name = b[0]
-        energy = eval(b[1])
+        energy = float(b[1])
         smi = []
         if len(b) > 2 and b[2] != '#':
-            smi = b[2:]
-        b = bimolec(name, energy, smi)
+            try:
+                energy2 = float(b[2])
+            except ValueError:
+                smi = b[2:]
+        b = bimolec(name, energy, smi, energy2)
         bimolecs.append(b)
     # end for
 
