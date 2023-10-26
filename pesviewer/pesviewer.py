@@ -1411,29 +1411,40 @@ def convert_units(energy):
 def create_interactive_graph(meps):
     """Create an interactive graph with pyvis."""
     
-    g = net.Network(height='1000px', width='90%', heading='')
+    g = net.Network(height='1000px', width='90%', heading='', directed=True)
 
     base_energy = next((species.energy for species in wells + bimolecs 
                         if species.name == options['rescale']), 0)
-    
-    min_well_energy = min([w.energy for w in wells])
-    max_well_energy = max([w.energy for w in wells])
-    well_energy_range = max_well_energy - min_well_energy
     for well in wells:
-        norm_energy = (well.energy - min_well_energy) / well_energy_range
-        size = (1 - norm_energy) * options['node_size_diff'] + 80
-        label = str(round(well.energy - base_energy, options['rounding']))
+        rel_energy = round(well.energy - base_energy, options['rounding'])
+        if np.isnan(rel_energy):
+            label = '❌'
+        else:
+            label = str(rel_energy)
         if not well.energy2 is None:
-            label += f' {round(well.energy2 - base_energy, options["rounding"])}'
+            rel_energy2 = round(well.energy2 - base_energy, options["rounding"])
+            if np.isnan(rel_energy2):
+                label += ' ❌'
+            else:
+                label += f' {rel_energy2}'
         g.add_node(well.name, label=label, borderWidth=3, title=f'{well.name}', 
                    shape='circularImage', image=f'{options["id"]}_2d/{well.name}_2d.png', 
-                   size=size, font='30', 
+                   size=80, font='30',
                    color={'background': '#FFFFFF', 'border': 'black',
                           'highlight': {'border': '#FF00FF', 'background': '#FFFFFF'}})
     for bim in bimolecs:
         border_color = options['graph_bimolec_color']
+        rel_energy = round(bim.energy - base_energy, options['rounding'])
+        if np.isnan(rel_energy):
+            label = '❌'
+        else:
+            label = str(rel_energy)
         if not bim.energy2 is None:
-            label += f' {round(bim.energy2 - base_energy, options["rounding"])}'
+            rel_energy2 = round(bim.energy2 - base_energy, options["rounding"])
+            if np.isnan(rel_energy2):
+                label += ' ❌'
+            else:
+                label += f' {rel_energy2}'
         g.add_node(bim.name, label=label, borderWidth=3, title=f'{bim.name}', 
                    shape='circularImage', image=f'{options["id"]}_2d/{bim.name}_2d.png', 
                    size=80, font='30', 
@@ -1474,6 +1485,7 @@ def create_interactive_graph(meps):
                    color={"highlight": "#FF00FF", 'color': color},
                    width=(1 - norm_energy) * 20 + 1)
 
+    g.set_edge_smooth('dynamic')
     g.show_buttons(filter_=['physics'])
     g.save_graph(f'{options["id"]}.html')
 
