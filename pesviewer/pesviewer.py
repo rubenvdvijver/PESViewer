@@ -527,6 +527,7 @@ def read_input(fname):
         w = w.split()
         name = w[0]
         energy = float(w[1])
+        energy2 = None
         smi = None
         if len(w) > 2 and w[2] != '#':
             try:
@@ -541,6 +542,7 @@ def read_input(fname):
         b = b.split()
         name = b[0]
         energy = float(b[1])
+        energy2 = None
         smi = []
         if len(b) > 2 and b[2] != '#':
             try:
@@ -1416,21 +1418,24 @@ def create_interactive_graph(meps):
     for well in wells:
         norm_energy = (well.energy - min_well_energy) / well_energy_range
         size = (1 - norm_energy) * options['node_size_diff'] + 80
-        g.add_node(well.name, label=str(round(well.energy - base_energy, options['rounding'])),
-                   borderWidth=3, title=f'{well.name}', shape='circularImage',
-                   image=f'{options["id"]}_2d/{well.name}_2d.png', size=size,
-                   font='30', color={'background': '#FFFFFF', 
-                                     'border': 'black',
-                                     'highlight': {'border': '#FF00FF', 
-                                                   'background': '#FFFFFF'}})
+        label = str(round(well.energy - base_energy, options['rounding']))
+        if not well.energy2 is None:
+            label += f' {round(well.energy2 - base_energy, options["rounding"])}'
+        g.add_node(well.name, label=label, borderWidth=3, title=f'{well.name}', 
+                   shape='circularImage', image=f'{options["id"]}_2d/{well.name}_2d.png', 
+                   size=size, font='30', 
+                   color={'background': '#FFFFFF', 'border': 'black',
+                          'highlight': {'border': '#FF00FF', 'background': '#FFFFFF'}})
     for bim in bimolecs:
-        g.add_node(bim.name, label=str(round(bim.energy - base_energy, options['rounding'])),
-                   borderWidth=3, title=f'{bim.name}', shape='circularImage',
-                   image=f'{options["id"]}_2d/{bim.name}_2d.png', size=80,
-                   font='30', color={'background': '#FFFFFF', 
-                                     'border': 'blue',
-                                     'highlight': {'border': '#FF00FF', 
-                                                   'background': '#FFFFFF'}})
+        label = str(round(bim.energy - base_energy, options['rounding']))
+        if not bim.energy2 is None:
+            label += f' {round(bim.energy2 - base_energy, options["rounding"])}'
+        g.add_node(bim.name, label=label, borderWidth=3, title=f'{bim.name}', 
+                   shape='circularImage', image=f'{options["id"]}_2d/{bim.name}_2d.png', 
+                   size=80, font='30', 
+                   color={'background': '#FFFFFF', 'border': 'blue',
+                          'highlight': {'border': '#FF00FF', 
+                          'background': '#FFFFFF'}})
 
     min_ts_energy = min([ts.energy for ts in tss])
     max_ts_energy = max([ts.energy for ts in tss])
