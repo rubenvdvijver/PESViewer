@@ -76,15 +76,22 @@ def filter_valid_structs(mol: rdkit.Chem.Mol, combs: list, hvy_bond_ids: list) -
             continue
 
         # Correct radical centers
+        valid_comb = False
         for a in new_mol.GetAtoms():
             for val in sorted(atomic_valences[a.GetSymbol()]):
                 if a.GetExplicitValence() + a.GetFormalCharge() > val:
+                    valid_comb = False
                     continue
                 else:
                     real_val = val
+                    valid_comb = True
                     break
+            if not valid_comb:
+                break
             n_rad_elecs = real_val - a.GetExplicitValence() - abs(a.GetFormalCharge())
             a.SetNumRadicalElectrons(n_rad_elecs)
+        if not valid_comb:
+            continue
         if not any([Chem.MolToSmiles(new_mol) == Chem.MolToSmiles(vmol)
                     for vmol in valid_mols]):
             valid_mols.append(new_mol)

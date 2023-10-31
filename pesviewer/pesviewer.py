@@ -1070,7 +1070,7 @@ def generate_2d_depiction():
                     print(f'Warning: Unable to generate resonant structure for '
                           f'{smi}.')
                     options['reso_2d'] = 0
-            if not options['reso_2d']:
+            else:
                 mol = Chem.MolFromSmiles(smi, sanitize=False)
                 mol.UpdatePropertyCache(strict=False)
                 Chem.SanitizeMol(mol, Chem.SanitizeFlags.SANITIZE_FINDRADICALS
