@@ -49,9 +49,16 @@ def filter_valid_structs(mol: rdkit.Chem.Mol, combs: list, hvy_bond_ids: list) -
     logger.setLevel(RDLogger.ERROR)
     rdBase.DisableLog('rdApp.error')
 
-    atomic_valences = {'C': [4], 'N': [3, 4, 5], 'O': [2], 'H': [1], 'S': [2, 4, 6],
-                       'F': [1], 'Cl': [1, 3, 5, 7], 'Br': [1, 3, 5, 7],
-                       'I': [1, 3, 5, 7]}
+    atomic_valences = {'C': [4], 
+                       'N': [3, 4, 5],
+                       'O': [2], 
+                       'H': [1], 
+                       'S': [2, 4, 6],
+                       'F': [1], 
+                       'Cl': [1, 3, 5, 7], 
+                       'Br': [1, 3, 5, 7],
+                       'I': [1, 3, 5, 7],
+                       'Xe': [0]}
     valid_mols = []
     for comb in combs:
         new_mol = deepcopy(mol)
